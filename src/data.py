@@ -15,6 +15,7 @@ class Data:
     nodes = tuple()
     depots = []
     decimals = 0
+    distances = dict()
 
     def __init__(self, filename):
 
@@ -58,9 +59,11 @@ class Data:
         sys.stdout.write("Instance: {}\n".format(self.instance_name))
         sys.stdout.write("Number of nodes (incl. depots): {}\n".format( len(self.nodes) ) )
         sys.stdout.write("Capacity: {}\n".format(self.capacity))
-        sys.stdout.write("Nodes: {}\n".format(self.nodes))
+        # sys.stdout.write("Nodes: {}\n".format(self.nodes))
 
     def pre_distance(self,i,j):
+        if i == j:
+            return (0)
         if j<i:
             return(self.distances[(j,i)])
         else:
@@ -73,11 +76,14 @@ class Data:
                 self.distances.update({(i,j):self.distance_idx(i,j)})
 
     def distance_idx(self, i, j):
-        return self.distance(self.nodes[i]["pt"],self.nodes[j]["pt"])
+        return self.distance(self.nodes[i]["pt"], self.nodes[j]["pt"])
 
     def distance(self,A, B):
         "The distance between two points."
         return round(abs(A - B),self.decimals)
+
+    def route_length(self, route):
+        return sum(self.pre_distance(route[i], route[i - 1]) for i in range(len(route)))
 
     def plot_points(self, outputfile_name=None):
         "Plot instance points."
@@ -88,4 +94,4 @@ class Data:
         if outputfile_name is None:
             plt.show()
         else:
-            plt.savefig(outputfile_name)
+            plt.savefig(outputfile_name, dpi=300)
