@@ -6,7 +6,6 @@ import argparse
 import time
 import data
 import farawaycluster
-# import solverCH
 import solverLS
 import solverNN
 import solverKNN
@@ -22,32 +21,43 @@ from pathlib import Path
 def solve(instance, config):
     t0 = time.time()
     # ch = farawaycluster.FACluster(instance)
-    ch = solverKNN.KNearestNeightbour(instance)
-    sol = ch.construct(config.time_limit-t0)  # returns an object of type Solution
+    ch = solverNN.NearestNeightbour(instance)
+    sol = ch.construct(t0)  # returns an object of type Solution
 
     t0 = time.time()
-    # ls = twoopt.TwoOPT(sol)
-    ls = threeopt.ThreeOPT(sol)
-    sol = ls.construct(config.time_limit-t0)  # returns an object of type Solution
+    ls = twoopt.TwoOPT(sol)
+    # ls = threeopt.ThreeOPT(sol)
+    sol = ls.construct(t0)  # returns an object of type Solution
     return sol
 
 def performance_testing(config):
     heuristics_algorithms = [solverNN.NearestNeightbour, solverKNN.KNearestNeightbour]
     
     try:
+        abs_path = os.path.abspath(os.path.dirname(__file__))
+        results_path = os.path.join(abs_path, "../results/")
+        data_path = os.path.join(abs_path, "../data/")
+        
         for index, algorithm in enumerate(heuristics_algorithms):
-            Path('../results').mkdir(parents=True, exist_ok=True)
-            with open('../results/' + algorithm.__name__ + '.csv', 'a') as filehandler:
-                filehandler.write("{}, {}, {}\n".format("Instance", "Cost", "Time"))
+            if os.path.isfile(results_path + algorithm.__name__ + '.csv'):
+                os.remove(results_path + algorithm.__name__ + '.csv')
+            Path(results_path).mkdir(parents=True, exist_ok=True)
+            with open(results_path + algorithm.__name__ + '.csv', 'a') as filehandler:
+                filehandler.write("{}, {}, {}, {}\n".format("Instance", "Cost", "Time", "Total Nodes"))
             
-                for path, subdirs, files in os.walk("../data"):
+                for path, subdirs, files in os.walk(data_path):
                     for filename in files:
                         if '.xml' in filename:
+                            print(filename)
                             t0 = time.time() # start time
                             instance = data.Data(os.path.join(path, filename))
                             canonical_solution = AlgorithmConstructor(instance, algorithm)
                             sol = canonical_solution.construct(t0)
-                            filehandler.write("{}, {}, {}\n".format(filename, sol.cost(), round(t0, 2)))
+                            assert sol.valid_solution()
+                            time_elapsed = time.time() - t0
+                            filehandler.write("{}, {}, {}, {}\n"
+                                              .format(filename, sol.cost(), 
+                                                      round(time_elapsed, 2), len(instance.nodes)))
                             
                         
     except TimeOutException:

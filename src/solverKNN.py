@@ -17,7 +17,7 @@ class KNearestNeightbour:
 
     def __init__(self, instance, time_limit=60):
         self.instance = instance
-        self.time_limt = time_limit
+        self.time_limit = time_limit
 
     def construct(self, start_time):
         return self.algorithm(start_time)
@@ -27,8 +27,9 @@ class KNearestNeightbour:
         
         route = [0] # Our route
         capacity = 0 # Our capacity for each vehicle
-        unvisited_nodes = list(self.instance.nodes[1:])
+        unvisited_nodes = list(self.instance.nodes)
         current_node = self.instance.nodes[0] # Starting a depot 0
+        unvisited_nodes.remove(current_node)
         distances = {}
         
         # While there are still nodes to visit, continue
@@ -43,22 +44,23 @@ class KNearestNeightbour:
             
             randomly_picked_node = random.choice(list(shortest_distances.keys()))
             node = distances.get(randomly_picked_node)
+            current_node = node
             if capacity + node['rq'] <= self.instance.capacity:
                 capacity += node['rq']
-                route += [int(node['id']) - 1]
-                current_node = node
+                route += [self.instance.nodes.index(node)]
                 unvisited_nodes.remove(current_node)
 
             else:
                 sol.routes += [route+[0]]
-                route = [0]
+                route = [0, self.instance.nodes.index(node)]
                 capacity = node['rq']
+                unvisited_nodes.remove(node)
             
             t1 = time.time() # End time
             if t1 - start_time > self.time_limit:
                 sys.stdout.write("Time Expired\n")
                 return sol
-
+            
             distances = {}
             node = None
             randomly_picked_node = None            

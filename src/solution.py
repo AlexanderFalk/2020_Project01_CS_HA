@@ -28,7 +28,8 @@ class Solution:
         # Checking capacity constraints
         capacities = [self.capacity_constraints(route) 
                       for route in self.routes]
-        if [False for capacity in capacities if capacity > 100]:
+
+        if [False for capacity in capacities if capacity > self.instance.capacity]:
             print("A vehicle has exceeded the capacity limit!")
             return False
         
@@ -38,16 +39,18 @@ class Solution:
                          for route2 in self.routes[1:] 
                          if route1 != route2]
         if [False for item in intersections if len(item) > 0]:
+            print("Intersections between two routes have been found!")
             return False
         
         # Constraint 1 - Amount of Leaving and Entering vehicles are equal
         if [False for route in self.routes if route[0] != 0 or route[-1] != 0]:
+            print("The amount of entering and leaving vehicles are NOT equal!")
             return False
 
         return True
     
     def capacity_constraints(self, route):
-        return sum([self.instance.nodes[point]['rq'] for point in route[1:-1]])
+        return sum([self.instance.nodes[point]['rq'] for point in route])
     
     def intersection(self, route1, route2):
         return [P for P in route1 if P in route2]
@@ -77,7 +80,7 @@ class Solution:
         c=0
         for route in self.routes:
             start = route[0]
-            self.plot_lines(list(route) + [start], style=color[c]+"o-")
+            self.plot_lines(list(route), style=color[c]+"o-")
             self.plot_lines([start], 'rs') # Mark the start city with a red square
             c=(c+1) % len(color)
         if outputfile_name is None:

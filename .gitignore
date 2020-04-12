@@ -222,5 +222,5 @@ TSWLatexianTemp*
 # Custom
 *.png
 *.sol
-src/__pycache__/*
+__pycache__/
 

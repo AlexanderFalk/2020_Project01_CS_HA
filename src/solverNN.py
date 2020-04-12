@@ -25,8 +25,9 @@ class NearestNeightbour:
         sol = solution.Solution(self.instance)
         route = [0] # Our route
         capacity = 0 # Our capacity for each vehicle
-        unvisited_nodes = list(self.instance.nodes[1:])
+        unvisited_nodes = list(self.instance.nodes)
         current_node = self.instance.nodes[0] # Starting a depot 0
+        unvisited_nodes.remove(current_node)
         shortest_distance = 0
         closest_node = None
         
@@ -34,22 +35,24 @@ class NearestNeightbour:
         while unvisited_nodes:
             # Loop through the unvisited nodes
             for index, p in enumerate(unvisited_nodes):
+                
                 dist = sol.instance.distance(current_node['pt'], p['pt'])
-
                 if dist < shortest_distance or shortest_distance == 0:
                     shortest_distance = dist
                     closest_node = p
-
+            
+            current_node = closest_node
             if capacity + closest_node['rq'] <= self.instance.capacity:
                 capacity += closest_node['rq']
-                route += [int(closest_node['id']) - 1]
-                current_node = closest_node
+                route += [self.instance.nodes.index(closest_node)]
                 unvisited_nodes.remove(current_node)
 
             else:
+                
                 sol.routes += [route+[0]]
-                route = [0]
+                route = [0, self.instance.nodes.index(closest_node)]
                 capacity = closest_node['rq']
+                unvisited_nodes.remove(closest_node)
             
             t1 = time.time()
             if t1 - start_time > self.time_limit:
@@ -60,5 +63,6 @@ class NearestNeightbour:
             closest_node = None
             
         sol.routes += [route+[0]]
+
         return sol
 

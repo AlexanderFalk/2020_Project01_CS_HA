@@ -13,22 +13,23 @@ import sys
 class ThreeOPT:
 
 
-    def __init__(self, computed_solution):
+    def __init__(self, computed_solution, time_limit=60):
         self.solution = computed_solution
+        self.time_limit = time_limit
 
     def construct(self, time_left):
         return self.algorithm(time_left)
 
-    def algorithm(self, time_left):
-        t0 = time.process_time()
+    def algorithm(self, start_time):
         for index, route in enumerate(self.solution.routes):
             segments = self.tour_segments(route)
             for i, j, k in segments:
                 self.solution.routes[index] = self.improvement(route, i, j, k)
                 
-        if time.process_time() - t0 > time_left:
-                sys.stdout.write("Time Expired")
-                return self.solution
+                t1 = time.time() # End time
+                if t1 - start_time > self.time_limit:
+                    sys.stdout.write("Time Expired\n")
+                    return self.solution
         
         return self.solution
 
