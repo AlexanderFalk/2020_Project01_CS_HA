@@ -15,15 +15,16 @@ import random
 class KNearestNeightbour:
 
 
-    def __init__(self, instance):
+    def __init__(self, instance, time_limit=60):
         self.instance = instance
+        self.time_limt = time_limit
 
-    def construct(self, time_left):
-        return self.algorithm(time_left)
+    def construct(self, start_time):
+        return self.algorithm(start_time)
 
-    def algorithm(self, time_left, k=3):
+    def algorithm(self, start_time, k=3):
         sol = solution.Solution(self.instance)
-        t0 = time.process_time() # Starting time
+        
         route = [0] # Our route
         capacity = 0 # Our capacity for each vehicle
         unvisited_nodes = list(self.instance.nodes[1:])
@@ -52,9 +53,10 @@ class KNearestNeightbour:
                 sol.routes += [route+[0]]
                 route = [0]
                 capacity = node['rq']
-
-            if time.process_time() - t0 > time_left:
-                sys.stdout.write("Time Expired")
+            
+            t1 = time.time() # End time
+            if t1 - start_time > self.time_limit:
+                sys.stdout.write("Time Expired\n")
                 return sol
 
             distances = {}

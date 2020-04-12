@@ -14,15 +14,15 @@ import sys
 class NearestNeightbour:
 
 
-    def __init__(self, instance):
+    def __init__(self, instance, time_limit=60):
         self.instance = instance
+        self.time_limit = time_limit
 
-    def construct(self, time_left):
-        return self.algorithm(time_left)
+    def construct(self, start_time):
+        return self.algorithm(start_time)
 
-    def algorithm(self, time_left):
+    def algorithm(self, start_time):
         sol = solution.Solution(self.instance)
-        t0 = time.process_time() # Starting time
         route = [0] # Our route
         capacity = 0 # Our capacity for each vehicle
         unvisited_nodes = list(self.instance.nodes[1:])
@@ -50,9 +50,10 @@ class NearestNeightbour:
                 sol.routes += [route+[0]]
                 route = [0]
                 capacity = closest_node['rq']
-
-            if time.process_time() - t0 > time_left:
-                sys.stdout.write("Time Expired")
+            
+            t1 = time.time()
+            if t1 - start_time > self.time_limit:
+                sys.stdout.write("Time Expired\n")
                 return sol
 
             shortest_distance = 0
