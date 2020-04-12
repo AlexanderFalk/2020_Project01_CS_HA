@@ -9,7 +9,7 @@ Created on Sat Apr 11 19:26:39 2020
 
 import time
 import itertools
-import copy
+import sys
 
 class TwoOPT:
 
@@ -21,10 +21,15 @@ class TwoOPT:
         return self.algorithm(time_left)
 
     def algorithm(self, time_left):
-        
+        t0 = time.process_time()
         for index, route in enumerate(self.solution.routes):
-            for A, B, C in self.tour_segments(route[1:-1]):
-                self.solution.routes[index] = self.improvement(route, A, B, C)
+            segments = self.tour_segments(route)
+            for i, j in segments:
+                self.solution.routes[index] = self.improvement(route, i, j)
+                
+            if time.process_time() - t0 > time_left:
+                sys.stdout.write("Time Expired")
+                return self.solution
         
         return self.solution
 
@@ -32,19 +37,11 @@ class TwoOPT:
         return self.solution.instance.pre_distance(i, j)
     
     def tour_segments(self, route):
-        return list(itertools.permutations(route, r = 3))
+        indices = [index for index in range(len(route))]
+        return list(itertools.permutations(indices, r = 2))
 
-    def improvement(self, route, *points):
-        A, B, C = list(points)
-        temp_route = copy.deepcopy(route)
-        if self.distance(A, B) + self.distance(B, C) > self.distance(A, C) + self.distance(C, B):
-            old_total_dist = sum(self.distance(route[i], route[i - 1]) for i in range(len(route)))
-            index_B = temp_route.index(B)
-            index_C = temp_route.index(C)
-            temp_route[index_B], temp_route[index_C] = temp_route[index_C], temp_route[index_B]
-            new_total_dist = sum(self.distance(temp_route[i], temp_route[i - 1]) for i in range(len(temp_route)))
-            if new_total_dist < old_total_dist:
-                route = copy.deepcopy(temp_route)
-
+    def improvement(self, route, i, j):
+        A, B, C, D = route[i-1], route[i], route[j-1], route[j % len(route)]
+        if self.distance(A, B) + self.distance(C, D) > self.distance(A, C) + self.distance(B, D):
+            route[i:j] = reversed(route[i:j])
         return route
-        

@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Apr 10 07:31:15 2020
+Created on Sun Apr 12 12:11:01 2020
 
 @author: alexanderfalk
 """
 
-
+import itertools
 import time
 import solution
 import sys
+import random
 
-class NearestNeightbour:
+class KNearestNeightbour:
 
 
     def __init__(self, instance):
@@ -20,43 +21,45 @@ class NearestNeightbour:
     def construct(self, time_left):
         return self.algorithm(time_left)
 
-    def algorithm(self, time_left):
+    def algorithm(self, time_left, k=3):
         sol = solution.Solution(self.instance)
         t0 = time.process_time() # Starting time
         route = [0] # Our route
         capacity = 0 # Our capacity for each vehicle
         unvisited_nodes = list(self.instance.nodes[1:])
         current_node = self.instance.nodes[0] # Starting a depot 0
-        shortest_distance = 0
-        closest_node = None
+        distances = {}
         
         # While there are still nodes to visit, continue
         while unvisited_nodes:
             # Loop through the unvisited nodes
             for index, p in enumerate(unvisited_nodes):
                 dist = sol.instance.distance(current_node['pt'], p['pt'])
-
-                if dist < shortest_distance or shortest_distance == 0:
-                    shortest_distance = dist
-                    closest_node = p
-
-            if capacity + closest_node['rq'] <= self.instance.capacity:
-                capacity += closest_node['rq']
-                route += [int(closest_node['id']) - 1]
-                current_node = closest_node
+                distances.update( { dist : p } )
+                
+            distances = {k : v for k, v in sorted(distances.items(), key=lambda item: item[0])}
+            shortest_distances = dict(itertools.islice(distances.items(), k))
+            
+            randomly_picked_node = random.choice(list(shortest_distances.keys()))
+            node = distances.get(randomly_picked_node)
+            if capacity + node['rq'] <= self.instance.capacity:
+                capacity += node['rq']
+                route += [int(node['id']) - 1]
+                current_node = node
                 unvisited_nodes.remove(current_node)
 
             else:
                 sol.routes += [route+[0]]
                 route = [0]
-                capacity = closest_node['rq']
+                capacity = node['rq']
 
             if time.process_time() - t0 > time_left:
                 sys.stdout.write("Time Expired")
                 return sol
 
-            shortest_distance = 0
-            closest_node = None
+            distances = {}
+            node = None
+            randomly_picked_node = None            
             
         sol.routes += [route+[0]]
         return sol

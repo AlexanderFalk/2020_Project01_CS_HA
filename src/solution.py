@@ -1,5 +1,4 @@
 import collections
-import math
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -11,11 +10,8 @@ class Solution:
         self.routes = []
 
     def valid_solution(self):
-       
-        leaving_vehicles = 0
-        entering_vehicles = 0
-        max_capacity = self.instance.capacity
-        print(self.routes[0])
+        
+        # Checking if any vehicle is visiting an already visited point
         duplicates = [point for route in self.routes 
                       for point, count in collections.Counter(route[1:-1]).items() 
                       if count > 1]

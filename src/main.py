@@ -4,10 +4,13 @@ import sys
 import argparse
 import time
 import data
+import farawaycluster
 # import solverCH
 import solverLS
 import solverNN
+import solverKNN
 import twoopt
+import threeopt
 import os
 # @my_logger
 # @my_timer
@@ -15,11 +18,13 @@ import os
 
 def solve(instance, config):
     t0 = time.process_time()
-    ch = solverNN.NearestNeightbour(instance)
+    # ch = farawaycluster.FACluster(instance)
+    ch = solverKNN.KNearestNeightbour(instance)
     sol = ch.construct(config.time_limit-t0)  # returns an object of type Solution
 
     t0 = time.process_time()
-    ls = twoopt.TwoOPT(sol)
+    # ls = twoopt.TwoOPT(sol)
+    ls = threeopt.ThreeOPT(sol)
     sol = ls.construct(config.time_limit-t0)  # returns an object of type Solution
     return sol
 
