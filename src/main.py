@@ -5,12 +5,12 @@ import sys
 import argparse
 import time
 import data
-import farawaycluster
+from furthestcluster import FurhestCluster
 import solverLS
-import solverNN
-import solverKNN
-import twoopt
-import threeopt
+from solverNN import NearestNeightbour
+from solverKNN import KNearestNeightbour
+from twoopt import TwoOPT
+from threeopt import ThreeOPT
 from timeout import TimeOutException
 import os
 from pathlib import Path
@@ -20,18 +20,18 @@ from pathlib import Path
 
 def solve(instance, config):
     t0 = time.time()
-    # ch = farawaycluster.FACluster(instance)
-    ch = solverNN.NearestNeightbour(instance)
+    ch = FurhestCluster(instance)
+    # ch = NearestNeightbour(instance)
     sol = ch.construct(t0)  # returns an object of type Solution
 
-    t0 = time.time()
-    ls = twoopt.TwoOPT(sol)
-    # ls = threeopt.ThreeOPT(sol)
-    sol = ls.construct(t0)  # returns an object of type Solution
+    # t0 = time.time()
+    # ls = TwoOPT(sol)
+    # ls = ThreeOPT(sol)
+    # sol = ls.construct(t0)  # returns an object of type Solution
     return sol
 
 def performance_testing(config):
-    heuristics_algorithms = [solverNN.NearestNeightbour, solverKNN.KNearestNeightbour]
+    heuristics_algorithms = [NearestNeightbour]
     
     try:
         abs_path = os.path.abspath(os.path.dirname(__file__))
@@ -53,6 +53,10 @@ def performance_testing(config):
                             instance = data.Data(os.path.join(path, filename))
                             canonical_solution = AlgorithmConstructor(instance, algorithm)
                             sol = canonical_solution.construct(t0)
+                            assert sol.valid_solution()
+                            ls = TwoOPT(sol)
+                            # ls = ThreeOPT(sol)
+                            sol = ls.construct(t0)  # returns an object of type Solution
                             assert sol.valid_solution()
                             time_elapsed = time.time() - t0
                             filehandler.write("{}, {}, {}, {}\n"

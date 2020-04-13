@@ -11,6 +11,8 @@
 \usepackage{fancyhdr}
 \usepackage{vmargin}
 \usepackage{algorithm}
+\usepackage{amssymb}
+\usepackage{csvsimple}
 \usepackage[noend]{algpseudocode}
 \newcommand{\var}{\texttt}
 \usepackage[toc,page]{appendix}
@@ -69,7 +71,7 @@
 			\begin{flushright} \large
 			\emph{Submitted By:} \\
 			Alexander Lerche Falk\\
-            Fall - Master of Computer Science\\
+            Spring - Master of Computer Science\\
 		\end{flushright}
         
 	\end{minipage}\\[2 cm]
@@ -112,224 +114,554 @@ At the end of the report, comparison of the heuristics and results are presented
 
 \section{Nearest Neightbour} 
 
-The Nearest Neightbour algorithm is a simple, yet powerful, approach to tackle CVRP. The algorithm goes starts at the depot and picks the nearest customer by iterating through all of the customers. It marks the customer and visited, adds it to a vehicle, and continues until the capacity of the vehicle is reached (or nearly reached). It returns to the depot and start over with the remaining customers. 
+The Nearest Neightbour algorithm is a simple, yet powerful, approach to tackle CVRP. The algorithm goes starts at the depot and picks the nearest customer by iterating through all of the customers. It marks the customer as visited, adds it to a vehicle, and continues until the capacity of the vehicle is reached (or nearly reached). It returns to the depot and start over with the remaining customers with a new vehicle. 
 
 The algorithm is described in pseudocode:
 \newline
 
 \begin{algorithm}[!ht]
-	\caption{Custom CVRP Heuristic - Nearest Neighbour Approach}\label{euclid}
+	\caption{Nearest Neightbour}\label{euclid}
 	\begin{algorithmic}[1]
-	\Require{$Point_{1} \dots Point_{N}$} 
+	\Require{Set of customers}
 	\Ensure{$Solution$ (solution to the CVRP instance)}
-	\Function{algorithm}{{$Points[\;]$}}
-	\State $\var{capacity} \gets \text{0}$
-	\State $\var{data} \gets \text{CVRP instance}$
-	\State $\var{visited} \gets \textit{empty array containing visited nodes}$
-	\State $\var{shortestdistance} \gets \textit{0}$
-	\State $\var{current} \gets \textit{keep track of next node to visit}$
-	\For{\texttt{$\var{i} \gets 0$ to $\text{length of data-1}$}}
-		\For{\texttt{$\var{j} \gets 1$ to $\text{length of data}$}}
-			\State $temp \gets \var{euclideandistance(\var{current}, \var{j})}$
-			\If{$j$ not in $visited$}
-				\If{$temp \leq shortestdistance$}
-					\State $shortestdistance \gets temp$
-					\State $current \gets j$
-					\State $visited \gets j$
-					\newline\Comment{checking if capacity requirements are met}
-					\If{$\text{current total capacity} \leq \text{max capacity}$}
-						\State $capacity \gets \text{capacity of current node}$					
-					\Else
-						\State $\text{Add starting point to end of route and}$
-						\State $\text{add capacity of current node to variable(\var{capacity})}$
-					\EndIf
-				\EndIf
-			\EndIf
-		\EndFor
-		\State $shortestdistance \gets 0$ \Comment{reset shortestdistance}
-	\EndFor
+	\State $\var{j} \gets$ random node j
+	\State $\var{i} = \var{j} \gets$ starting point
+	\State $\var{W} = \{1, 2, ..., n\} \backslash \{j\} \gets$ set of customers minus the randomly picked
+	\Function{NearestNeightbour}{{$instance, W$}}
+		\While {$W \neq \varnothing$}
+			\State \text{$let\  j \in W \  |\  c_{ij} = min\{c_{ij}\  |\  j \in W\}$}
+			\State Shortest node by edge $(i,j)$ is added to vehicle route
+			\State Set $W = W \backslash \{j\}$ $\gets$ Customer i is marked visited
+			\State $i = j$ $\gets$ setting i to next in line
 
-	\State \textbf{return} $solution$
+		\EndWhile
 	\EndFunction
+
 	\end{algorithmic}
 \end{algorithm}
 
+The Nearest Neightbour has a running time of $\mathcal{O}(n^2)$, which is a quadric function. This means, that for every execution step done by the algorithm, the input size n has to be checked: $ n * n$.  
+In the developed code, a parameter has been added to perform performance testing on the algorithms. Every instance is executed by each of the algorithms, where time, cost, and numbers of nodes are saved. In Figure \ref{fig:nnanalysis} (see appendix A for data), it is shown when the input size grows, the execution time grows quadric:
+
+\begin{figure}[H]
+	\caption{Algorithm analysis of Nearest Neightbour. $X = Time$, $Y = Nodes$}
+	\centering
+	\includegraphics[width=1.0\textwidth]{NN_Graph_Results.png}
+	\label{fig:nnanalysis}
+
+\end{figure}
+
 \newpage
-\section{First Custom Local Search Algorithms}
-Having executed the heuristics, providing us with solutions to the initial problem instances, we can continue optimizing. This is where the Local Search Optimization algorithms comes into play. 
-Given a canonical solution, we want to optimize it to reduce the total cost of the solution. We have provided three custom Local Search (LS) algorithms, trying to optimize the canonical solution.
-All of our localsearches optimize solution by make exchanges of visiting node between 2 routes in solution set. Thus they can be used in combination with original Traveling salesman problem's localsearches such as 2-opt and 3-opt, where improvements are done by swapping and reversing order of visiting nodes in single route.
+
+\section{K Nearest Neightbours with a randomized twist} 
+
+The K-Nearest Neightbour algorithm is the same as Nearest Neightbour but with a twist. The Nearest Neightbour algorithm has to downside of ending in a local optimum. This means, the solution is optimal within the set of candidate solutions. It is different from the global optimum, which is the optimal solution for all possible solutions. KNN tries to escape the local optimum by taking an unforseen step instead of always following the closest node. It starts by picking the k nearest neightbours and then by voting, it picks one of the k nearest neightbours. The vote in this case is done by randomly choosing a customer and then continue with the same approach. 
+
+The algorithm is described in pseudocode:
 \newline
-The first LS algorithm looks into the generated routes done by the heuristics. It takes two routes and compare them with each other, checking if any swaps are possible in the two routes. 
-A swap is possible if the distance is being reduced in at least one route, while still preserving the maximum capacity limit of both routes. 
-The second LS algorithm looks like the first but with a minor change. It takes one route and compares it with every other route to find a better solution. It then continues doing this 
-with every other route. 
 
+\begin{algorithm}[!ht]
+	\caption{K-Nearest Neightbour}\label{euclid}
+	\begin{algorithmic}[1]
+	\Require{Set of customers}
+	\Ensure{$Solution$ (solution to the CVRP instance)}
+	\State $\var{j} \gets$ random node j
+	\State $\var{i} = \var{j} \gets$ starting point
+	\State $\var{W} = \{1, 2, ..., n\} \backslash \{j\} \gets$ set of customers minus the randomly picked
+	\State $\var{C} = \varnothing \gets$ empty set to store closest points to i
+	\Function{KNearestNeightbour}{{$instance, W$}}
+		\While {$W \neq \varnothing$}
+			\State \text{$let\  j \in W \  |\  c_{ij} = min\{c_{ij}\  |\  j \in W\}$}
+			\State Every j is added to $C$
+			\State Sort $C$ ascending and take the first k customers
+			\State Set j to a random pick in $C$
+			\State Set $W = W \backslash \{j\}$ $\gets$ Customer j is marked visited
+			\State $i = j$ $\gets$ setting i to next in line
 
-\section{Performance Analysis \& Boxplots}
+		\EndWhile
+	\EndFunction
 
-\section{Process Analysis}
+	\end{algorithmic}
+\end{algorithm}
+
+The K-Nearest Neightbour has a running time of $\mathcal{O}(n^2 + k)$, which is a quadric function. The execution steps for the input size is the same as the nearest neightbour, but it adds the extra execution by randomly picking one of the k nearest neigtbours.
+In Figure \ref{fig:knnanalysis} (see appendix B for data), it is shown when the input size grows, the execution time grows quadric:
+
+\begin{figure}[H]
+	\caption{Algorithm analysis of K-Nearest Neightbour. $X = Time$, $Y = Nodes$}
+	\centering
+	\includegraphics[width=1.0\textwidth]{KNN_Graph_Results.png}
+	\label{fig:knnanalysis}
+
+\end{figure}
 
 \newpage
-\bibliographystyle{plain}
-\bibliography{references}
+
+\section{Furthest Neightbour Cluster - Custom} 
+
+NN and KNN takes the nearest neightbours into consideration and keeps growing by using the nearest neightbour. This can lead to issues with the later vehicles only having the customers left, which are far away from each other. Depending on the instance, KNN - and especially - NN can grow in one direction, and not taking the rest of the instance into account.  
+The project has tried to accommodate the issue by picking the customer furthest away from the depot. The algorithm has been named Furthest Neightbour Cluster - lacking of better naming. The algorithm picks the customer furtest away from the depot, finds the closest nodes to the picked customer (like a cluster), and uses NN to find a suitable route within this cluster. Capacity is taking into considartion when picking the closest customers.
+
+The algorithm is described in pseudocode:
+
+\begin{algorithm}[!ht]
+	\caption{Furthest Neightbour Cluster}\label{euclid}
+	\begin{algorithmic}[1]
+	\Require{Set of customers}
+	\Ensure{$Solution$ (solution to the CVRP instance)}
+	\State $\var{j} \gets$ depot
+	\State $\var{i} = \var{j} \gets$ starting point
+	\State $\var{W} = \{1, 2, ..., n\} \backslash \{j\} \gets$ set of customers minus the randomly picked
+	\State $\var{F} = \varnothing \gets$ empty set to store closest customer to furhtest customer
+	\Function{FurthestNeightbourCluster}{{$instance, W$}}
+		\While {$W \neq \varnothing$}
+			\State \text{$let\  j \in W \  |\  c_{ij} = max\{c_{ij}\  |\  j \in W\}$}
+			\State Furthest node by edge $(i,j)$ is stored in j
+			\State Set $W = W \backslash \{j\}$ $\gets$ Customer j is marked visited
+			\While {$W \neq \varnothing$ \& Capacity not reached}
+				\State \text{$let\  k \in W \  |\  c_{jk} = min\{c_{jk}\  |\  k \in W\}$}
+				\State Shortest node by edge $(j,k)$ is stored in k
+				\State Set $W = W \backslash \{k\}$ $\gets$ Customer k is marked visited
+				\State $i = depot$ as starting point
+			\EndWhile
+		\EndWhile
+	\EndFunction
+
+	\end{algorithmic}
+\end{algorithm}
+
+The Furthest Neightbour Cluster has a running time of $\mathcal{O}(3n^2)$, which is a quadric function. We can calculate it by looking into the code and analyze. The first While-loop takes up $\mathcal{O}(n)$ and the For-loop inside it takes up $\mathcal{O}(n)$. Then the While-loop inside the outer While-loop takes up the same as before: $\mathcal{O}(n)$ and the same with the For-loop inside: $\mathcal{O}(n)$. The last While- and For-loop takes up the same: $\mathcal{O}(n)$. This gives us the following: ($\mathcal{O}(n)$ * $\mathcal{O}(n)$) + ($\mathcal{O}(n)$) * $\mathcal{O}(n)$) + ($\mathcal{O}(n)$ * $\mathcal{O}(n)$) $=$ $\mathcal{O}(3n^2)$. \\
+In Appendix D, the code for the algorithm is shown.\\
+In Figure \ref{fig:fncanalysis} (see appendix E for data), it is shown when the input size grows, the execution time grows quadric:
+
+\begin{figure}[H]
+	\caption{Algorithm analysis of K-Nearest Neightbour. $X = Time$, $Y = Nodes$}
+	\centering
+	\includegraphics[width=1.0\textwidth]{FNC_Graph_Results.png}
+	\label{fig:fncanalysis}
+
+\end{figure}
+
+\section{Two Opt \& Three Opt}
+
+Heuristics generates solutions which can be global optimal, but tends to end up in a local optimum. One way of getting out of this is by using Local Search Optimization algorithms. These algorithms takes an existing solution to an optimization problem and try to optimize the solution. In this project, the goal is to minimize the total cost of the vehicle routes, and we can use Two Opt and Three Opt to try improving our existing solutions. \\
+Two opt takes two routes and compare their distances. A swap is possible if the distance is being reduced in at least one route, while still preserving the maximum capacity limit of both routes. \\
+Three Opt does the same as Two Opt, but instead of looking and two routes, it takes three into consideration. \\
+
+Using the Nearest Neightbour heuristics to analysise the cost reduction using local search showed an improvement of $171424 - 167016 = 4408$ (sum of total costs from .csv files / see appendix F for results) over all of the instances. And this is by only running Two Opt once on every solution of each instance.
+
+\section{Closing Notes}
+
+Heuristics give fast and good results. They are not global optimum but if the objective is to find a solution, and not the best, they are good for this. To get closer to global optimum, local search algorithms tries to get us closer. The issue with local search algorithms are: when to stop improving. Shown in the above results, Two Opt was only ran once to improve existing solutions, but it could have been run continiously and set a kill switch, when it is no longer improving. One issue with this is, when it gets stuck in a local optimum. In that case, other approaches should be taken to try and get away from the local optimum. An example of this could be by making bad moves. 
 
 \newpage
 \begin{appendices}
 
-\section{\\Custom Cluster Algorithm to solve CVRP}
-% the \\ insures the section title is centered below the phrase: AppendixA
+\section{Nearest Neightbour Results}
 
-\begin{algorithm}[!ht]
-	\caption{Cluster CVRP Localsearch}
-	\begin{algorithmic}[1]
-	\Require{$closest\_point(A, points)$: returns point in points which hase minimum distance from A} 
-	\Require{$elim\_empty\_routes$: returns list of routes where the empty routes are removed}
-	\Ensure{$routes$: Better Solution to the CVRP instance}
-	\Function{algorithm}{{$routes$, $maxcap$}}
-	\State $\var{route\_convexes}$ is an array storing convex\_hull for each route  
-	\State $\var{improvements} \gets \text{True}$
-	\While{\texttt{$\var{improvements}$}}
-		\ForAll{$i$, $j$ such that $i$, $j$ are routes index combination}
-			\State $\var{central\_point\_i} \gets$ average of point in convex i
-
-			\State $\var{central\_point\_j} \gets$ average of point in convex j
-			
-			\State $\var{closest\_from\_i\_j} \gets \text{closest\_point(mid\_point\_i, convex\_routes[j])}$
-
-			\State $\var{closest\_from\_j\_i} \gets \text{closest\_point(mid\_point\_j, convex\_routes[i])}$
-
-			\If{$\var{closest\_from\_i\_j}$ and $\var{closest\_from\_j\_i}$ is Found}
-			
-			\If{$closest\_from\_i\_j$ fits in route j}
-				\State \text{add move to route improvements j}
-				\State \text{make the swap}
-			\ElsIf{$closest\_from\_j\_i$ fits in route i}
-				\State \text{add move to route improvements i}
-				\State \text{make the swap}
-			\ElsIf{capacity is not reached by swapping customers}
-				\State \text{swap the route-points between i and j}
-			\EndIf
-
-			\If{$\var{improvements}$}
-				\State recalculate convex hull of route i and j				
-			\EndIf
-			\EndIf
-			\EndFor
-
-		\If{\textbf{not} $\var{improvements}$}
-			\State $\var{routes} = elim\_empty\_routes(\var{routes})$
-			\Return $\var{routes}$
-		\EndIf
-	\EndWhile
-	\EndFunction
-
-	\end{algorithmic}
-\end{algorithm}
-
-\section{\\LocalSearch Algorithm - Swap if any improvement}
-
-\begin{algorithm}[!ht]
-	\caption{swap\_if\_improvement}
-	\begin{algorithmic}[1]
-		\Require{$dist(A,B)$ returns distance from point A to B}
-	\Function{swap\_if\_improvement}{{$route\_i, route\_j, j\_to\_i, i\_to\_j$}}
-
-	\State $\var{A}, \var{B}, \var{C} \gets \var{route\_i[i\_to\_j-1]}, \var{route\_i[i\_to\_j]},$
-	\Statex $\var{route\_i[i\_to\_j+1 mod(\%) len(route\_i)]}$
-	\State $\var{D}, \var{E}, \var{F} \gets \var{route\_j[j\_to\_i-1]}, \var{route\_j[j\_to\_i]},$ 
-	\Statex $\var{route\_j[j\_to\_i+1 mod(\%) len(route\_j)]}$
-
-	\State $\var{old\_distance\_i} \gets dist(\var{A},\var{B}) + dist(\var{B},\var{C})$
-	\State $\var{old\_distance\_j} \gets dist(\var{D},\var{E}) + dist(\var{E},\var{F})$
-
-	\State $\var{new\_distance\_i} \gets dist(\var{A},\var{E}) + dist(\var{E},\var{C})$
-	\State $\var{new\_distance\_j} \gets dist(\var{D},\var{B}) + dist(\var{B},\var{F})$
-
-	\If{$\var{old\_distance\_i} + \var{old\_distance\_j} >$ 
-		\Statex $\var{new\_distance\_i} + \var{new\_distance\_j}$}
-		\Statex $\text{swap point B of route i with point E of route j}$
-		\Statex \Return True
-	\EndIf
-	\EndFunction
-
-	\end{algorithmic}
-\end{algorithm}
-
+\begin{table}[]
+	\begin{tabular}{llll}
+	Instance & Cost & Time & Total Nodes \\
+	Golden\_04.xml & 15746.0 & 0.26 & 481 \\
+	Golden\_13.xml & 980.0 & 0.1 & 253 \\
+	Golden\_17.xml & 924.0 & 0.08 & 241 \\
+	Golden\_19.xml & 1756.0 & 0.15 & 361 \\
+	Golden\_05.xml & 9443.0 & 0.07 & 201 \\
+	Golden\_09.xml & 575.0 & 0.08 & 256 \\
+	Golden\_01.xml & 5824.0 & 0.07 & 241 \\
+	Golden\_18.xml & 1413.0 & 0.13 & 301 \\
+	Golden\_15.xml & 1545.0 & 0.17 & 397 \\
+	Golden\_20.xml & 2288.0 & 0.21 & 421 \\
+	Golden\_07.xml & 11380.0 & 0.14 & 361 \\
+	Golden\_14.xml & 1281.0 & 0.12 & 321 \\
+	Golden\_16.xml & 1897.0 & 0.26 & 481 \\
+	Golden\_10.xml & 764.0 & 0.13 & 324 \\
+	Golden\_11.xml & 974.0 & 0.17 & 400 \\
+	Golden\_03.xml & 12054.0 & 0.19 & 401 \\
+	Golden\_08.xml & 12876.0 & 0.23 & 441 \\
+	Golden\_06.xml & 9689.0 & 0.13 & 281 \\
+	Golden\_12.xml & 1165.0 & 0.27 & 484 \\
+	Golden\_02.xml & 9245.0 & 0.22 & 321 \\
+	A-n63-k10.xml & 1505.0 & 0.02 & 63 \\
+	A-n61-k09.xml & 1294.0 & 0.01 & 61 \\
+	A-n37-k05.xml & 965.0 & 0.01 & 37 \\
+	A-n54-k07.xml & 1690.0 & 0.01 & 54 \\
+	A-n69-k09.xml & 1555.0 & 0.02 & 69 \\
+	A-n62-k08.xml & 1486.0 & 0.01 & 62 \\
+	A-n53-k07.xml & 1270.0 & 0.01 & 53 \\
+	A-n38-k05.xml & 966.0 & 0.0 & 38 \\
+	A-n65-k09.xml & 1422.0 & 0.01 & 65 \\
+	A-n60-k09.xml & 1583.0 & 0.01 & 60 \\
+	A-n64-k09.xml & 1715.0 & 0.01 & 64 \\
+	A-n45-k07.xml & 1614.0 & 0.0 & 45 \\
+	A-n63-k09.xml & 2056.0 & 0.01 & 63 \\
+	A-n39-k06.xml & 1054.0 & 0.0 & 39 \\
+	A-n33-k05.xml & 765.0 & 0.0 & 33 \\
+	A-n34-k05.xml & 969.0 & 0.0 & 34 \\
+	A-n33-k06.xml & 903.0 & 0.0 & 33 \\
+	A-n39-k05.xml & 1076.0 & 0.0 & 39 \\
+	A-n46-k07.xml & 1159.0 & 0.0 & 46 \\
+	A-n45-k06.xml & 1158.0 & 0.0 & 45 \\
+	A-n37-k06.xml & 1164.0 & 0.0 & 37 \\
+	A-n55-k09.xml & 1392.0 & 0.0 & 55 \\
+	A-n44-k06.xml & 1251.0 & 0.0 & 44 \\
+	A-n36-k05.xml & 1059.0 & 0.0 & 36 \\
+	A-n48-k07.xml & 1316.0 & 0.01 & 48 \\
+	A-n80-k10.xml & 2054.0 & 0.01 & 80 \\
+	A-n32-k05.xml & 926.0 & 0.0 & 32 \\
+	P-n051-k10.xml & 962.0 & 0.0 & 51 \\
+	P-n101-k04.xml & 962.0 & 0.02 & 101 \\
+	P-n050-k10.xml & 807.0 & 0.0 & 50 \\
+	P-n023-k08.xml & 671.0 & 0.0 & 23 \\
+	P-n019-k02.xml & 272.0 & 0.0 & 19 \\
+	P-n045-k05.xml & 674.0 & 0.0 & 45 \\
+	P-n020-k02.xml & 293.0 & 0.0 & 20 \\
+	P-n060-k10.xml & 878.0 & 0.01 & 60 \\
+	P-n022-k02.xml & 289.0 & 0.0 & 22 \\
+	P-n050-k07.xml & 663.0 & 0.0 & 50 \\
+	P-n055-k08.xml & 668.0 & 0.0 & 55 \\
+	P-n070-k10.xml & 991.0 & 0.02 & 70 \\
+	P-n040-k05.xml & 576.0 & 0.0 & 40 \\
+	P-n016-k08.xml & 497.0 & 0.0 & 16 \\
+	P-n076-k04.xml & 773.0 & 0.01 & 76 \\
+	P-n060-k15.xml & 1127.0 & 0.01 & 60 \\
+	P-n076-k05.xml & 839.0 & 0.02 & 76 \\
+	P-n021-k02.xml & 262.0 & 0.0 & 21 \\
+	P-n022-k08.xml & 690.0 & 0.0 & 22 \\
+	P-n065-k10.xml & 1017.0 & 0.01 & 65 \\
+	P-n055-k07.xml & 744.0 & 0.01 & 55 \\
+	P-n050-k08.xml & 711.0 & 0.0 & 50 \\
+	P-n055-k15.xml & 1095.0 & 0.01 & 55 \\
+	P-n055-k10.xml & 791.0 & 0.01 & 55 \\
+	CMT06.xml & 746.0 & 0.0 & 51 \\
+	CMT05.xml & 1690.0 & 0.05 & 200 \\
+	CMT04.xml & 1446.0 & 0.04 & 151 \\
+	CMT07.xml & 1050.0 & 0.02 & 76 \\
+	CMT03.xml & 1047.0 & 0.02 & 101 \\
+	CMT01.xml & 746.0 & 0.0 & 51 \\
+	CMT14.xml & 1130.0 & 0.02 & 101 \\
+	CMT12.xml & 1130.0 & 0.01 & 101 \\
+	CMT02.xml & 1050.0 & 0.01 & 76 \\
+	CMT08.xml & 1047.0 & 0.01 & 101 \\
+	CMT11.xml & 1384.0 & 0.02 & 121 \\
+	CMT10.xml & 1690.0 & 0.05 & 200 \\
+	CMT13.xml & 1384.0 & 0.04 & 121 \\
+	CMT09.xml & 1446.0 & 0.03 & 151
+	\end{tabular}
+	\end{table}
 \newpage
-\section{\\LocalSearch Algorithm - Move if any improvement}
+
+
+\section{K-Nearest Neightbour Results}
+
+\begin{table}[]
+	\begin{tabular}{llll}
+	Instance & Cost & Time & Total Nodes \\
+	Golden\_04.xml & 27923.0 & 0.42 & 481 \\
+	Golden\_13.xml & 1411.0 & 0.13 & 253 \\
+	Golden\_17.xml & 1207.0 & 0.09 & 241 \\
+	Golden\_19.xml & 2299.0 & 0.18 & 361 \\
+	Golden\_05.xml & 13912.0 & 0.08 & 201 \\
+	Golden\_09.xml & 965.0 & 0.09 & 256 \\
+	Golden\_01.xml & 10802.0 & 0.07 & 241 \\
+	Golden\_18.xml & 1686.0 & 0.14 & 301 \\
+	Golden\_15.xml & 2165.0 & 0.19 & 397 \\
+	Golden\_20.xml & 3025.0 & 0.24 & 421 \\
+	Golden\_07.xml & 19552.0 & 0.16 & 361 \\
+	Golden\_14.xml & 1773.0 & 0.13 & 321 \\
+	Golden\_16.xml & 2633.0 & 0.29 & 481 \\
+	Golden\_10.xml & 1231.0 & 0.13 & 324 \\
+	Golden\_11.xml & 1538.0 & 0.19 & 400 \\
+	Golden\_03.xml & 20616.0 & 0.22 & 401 \\
+	Golden\_08.xml & 23087.0 & 0.24 & 441 \\
+	Golden\_06.xml & 17759.0 & 0.11 & 281 \\
+	Golden\_12.xml & 1920.0 & 0.3 & 484 \\
+	Golden\_02.xml & 15024.0 & 0.14 & 321 \\
+	A-n63-k10.xml & 2060.0 & 0.01 & 63 \\
+	A-n61-k09.xml & 1742.0 & 0.01 & 61 \\
+	A-n37-k05.xml & 1170.0 & 0.0 & 37 \\
+	A-n54-k07.xml & 1860.0 & 0.0 & 54 \\
+	A-n69-k09.xml & 1755.0 & 0.01 & 69 \\
+	A-n62-k08.xml & 2189.0 & 0.01 & 62 \\
+	A-n53-k07.xml & 1616.0 & 0.01 & 53 \\
+	A-n38-k05.xml & 1202.0 & 0.0 & 38 \\
+	A-n65-k09.xml & 1882.0 & 0.01 & 65 \\
+	A-n60-k09.xml & 2285.0 & 0.01 & 60 \\
+	A-n64-k09.xml & 2292.0 & 0.01 & 64 \\
+	A-n45-k07.xml & 1585.0 & 0.0 & 45 \\
+	A-n63-k09.xml & 2487.0 & 0.01 & 63 \\
+	A-n39-k06.xml & 1441.0 & 0.0 & 39 \\
+	A-n33-k05.xml & 1205.0 & 0.0 & 33 \\
+	A-n34-k05.xml & 1397.0 & 0.0 & 34 \\
+	A-n33-k06.xml & 1107.0 & 0.0 & 33 \\
+	A-n39-k05.xml & 1289.0 & 0.0 & 39 \\
+	A-n46-k07.xml & 1453.0 & 0.0 & 46 \\
+	A-n45-k06.xml & 1613.0 & 0.0 & 45 \\
+	A-n37-k06.xml & 1509.0 & 0.0 & 37 \\
+	A-n55-k09.xml & 1812.0 & 0.01 & 55 \\
+	A-n44-k06.xml & 1503.0 & 0.0 & 44 \\
+	A-n36-k05.xml & 1307.0 & 0.0 & 36 \\
+	A-n48-k07.xml & 1717.0 & 0.0 & 48 \\
+	A-n80-k10.xml & 2732.0 & 0.01 & 80 \\
+	A-n32-k05.xml & 1282.0 & 0.0 & 32 \\
+	P-n051-k10.xml & 1146.0 & 0.0 & 51 \\
+	P-n101-k04.xml & 1353.0 & 0.01 & 101 \\
+	P-n050-k10.xml & 1083.0 & 0.0 & 50 \\
+	P-n023-k08.xml & 695.0 & 0.0 & 23 \\
+	P-n019-k02.xml & 356.0 & 0.0 & 19 \\
+	P-n045-k05.xml & 797.0 & 0.0 & 45 \\
+	P-n020-k02.xml & 401.0 & 0.0 & 20 \\
+	P-n060-k10.xml & 1132.0 & 0.01 & 60 \\
+	P-n022-k02.xml & 371.0 & 0.0 & 22 \\
+	P-n050-k07.xml & 956.0 & 0.0 & 50 \\
+	P-n055-k08.xml & 1025.0 & 0.0 & 55 \\
+	P-n070-k10.xml & 1310.0 & 0.01 & 70 \\
+	P-n040-k05.xml & 695.0 & 0.0 & 40 \\
+	P-n016-k08.xml & 537.0 & 0.0 & 16 \\
+	P-n076-k04.xml & 1036.0 & 0.01 & 76 \\
+	P-n060-k15.xml & 1451.0 & 0.01 & 60 \\
+	P-n076-k05.xml & 1142.0 & 0.01 & 76 \\
+	P-n021-k02.xml & 309.0 & 0.0 & 21 \\
+	P-n022-k08.xml & 792.0 & 0.0 & 22 \\
+	P-n065-k10.xml & 1279.0 & 0.01 & 65 \\
+	P-n055-k07.xml & 926.0 & 0.01 & 55 \\
+	P-n050-k08.xml & 1006.0 & 0.0 & 50 \\
+	P-n055-k15.xml & 1308.0 & 0.0 & 55 \\
+	P-n055-k10.xml & 1004.0 & 0.0 & 55 \\
+	CMT06.xml & 836.0 & 0.01 & 51 \\
+	CMT05.xml & 2392.0 & 0.07 & 200 \\
+	CMT04.xml & 1909.0 & 0.04 & 151 \\
+	CMT07.xml & 1192.0 & 0.01 & 76 \\
+	CMT03.xml & 1412.0 & 0.01 & 101 \\
+	CMT01.xml & 913.0 & 0.0 & 51 \\
+	CMT14.xml & 1579.0 & 0.01 & 101 \\
+	CMT12.xml & 1528.0 & 0.01 & 101 \\
+	CMT02.xml & 1383.0 & 0.01 & 76 \\
+	CMT08.xml & 1467.0 & 0.02 & 101 \\
+	CMT11.xml & 1983.0 & 0.02 & 121 \\
+	CMT10.xml & 2372.0 & 0.05 & 200 \\
+	CMT13.xml & 1916.0 & 0.02 & 121 \\
+	CMT09.xml & 1880.0 & 0.03 & 151
+	\end{tabular}
+	\end{table}
+\newpage
+
+\section{Furthest Neightbour Cluster - Results}
+
+\begin{table}[]
+	\begin{tabular}{llll}
+	Instance & Cost & Time & Total Nodes \\
+	Golden\_04.xml & 74042.0 & 0.19 & 481 \\
+	Golden\_13.xml & 3137.0 & 0.05 & 253 \\
+	Golden\_17.xml & 3050.0 & 0.07 & 241 \\
+	Golden\_19.xml & 6218.0 & 0.1 & 361 \\
+	Golden\_05.xml & 36673.0 & 0.03 & 201 \\
+	Golden\_09.xml & 2521.0 & 0.07 & 256 \\
+	Golden\_01.xml & 21912.0 & 0.05 & 241 \\
+	Golden\_18.xml & 4350.0 & 0.07 & 301 \\
+	Golden\_15.xml & 5432.0 & 0.15 & 397 \\
+	Golden\_20.xml & 8151.0 & 0.14 & 421 \\
+	Golden\_07.xml & 49258.0 & 0.1 & 361 \\
+	Golden\_14.xml & 4211.0 & 0.11 & 321 \\
+	Golden\_16.xml & 6905.0 & 0.17 & 481 \\
+	Golden\_10.xml & 3519.0 & 0.11 & 324 \\
+	Golden\_11.xml & 4729.0 & 0.12 & 400 \\
+	Golden\_03.xml & 51120.0 & 0.12 & 401 \\
+	Golden\_08.xml & 54002.0 & 0.16 & 441 \\
+	Golden\_06.xml & 43663.0 & 0.07 & 281 \\
+	Golden\_12.xml & 6295.0 & 0.18 & 484 \\
+	Golden\_02.xml & 34681.0 & 0.1 & 321 \\
+	A-n63-k10.xml & 3343.0 & 0.01 & 63 \\
+	A-n61-k09.xml & 3200.0 & 0.01 & 61 \\
+	A-n37-k05.xml & 1762.0 & 0.0 & 37 \\
+	A-n54-k07.xml & 3374.0 & 0.0 & 54 \\
+	A-n69-k09.xml & 3756.0 & 0.0 & 69 \\
+	A-n62-k08.xml & 4130.0 & 0.0 & 62 \\
+	A-n53-k07.xml & 2817.0 & 0.0 & 53 \\
+	A-n38-k05.xml & 1982.0 & 0.0 & 38 \\
+	A-n65-k09.xml & 3420.0 & 0.0 & 65 \\
+	A-n60-k09.xml & 3699.0 & 0.01 & 60 \\
+	A-n64-k09.xml & 3872.0 & 0.0 & 64 \\
+	A-n45-k07.xml & 2592.0 & 0.0 & 45 \\
+	A-n63-k09.xml & 4233.0 & 0.0 & 63 \\
+	A-n39-k06.xml & 2262.0 & 0.0 & 39 \\
+	A-n33-k05.xml & 1970.0 & 0.0 & 33 \\
+	A-n34-k05.xml & 2076.0 & 0.0 & 34 \\
+	A-n33-k06.xml & 1608.0 & 0.0 & 33 \\
+	A-n39-k05.xml & 1942.0 & 0.0 & 39 \\
+	A-n46-k07.xml & 2592.0 & 0.0 & 46 \\
+	A-n45-k06.xml & 2617.0 & 0.0 & 45 \\
+	A-n37-k06.xml & 2217.0 & 0.0 & 37 \\
+	A-n55-k09.xml & 3250.0 & 0.0 & 55 \\
+	A-n44-k06.xml & 2345.0 & 0.0 & 44 \\
+	A-n36-k05.xml & 1990.0 & 0.0 & 36 \\
+	A-n48-k07.xml & 2639.0 & 0.0 & 48 \\
+	A-n80-k10.xml & 4686.0 & 0.01 & 80 \\
+	A-n32-k05.xml & 2018.0 & 0.0 & 32 \\
+	P-n051-k10.xml & 1814.0 & 0.01 & 51 \\
+	P-n101-k04.xml & 3595.0 & 0.01 & 101 \\
+	P-n050-k10.xml & 1798.0 & 0.0 & 50 \\
+	P-n023-k08.xml & 733.0 & 0.0 & 23 \\
+	P-n019-k02.xml & 452.0 & 0.0 & 19 \\
+	P-n045-k05.xml & 1583.0 & 0.0 & 45 \\
+	P-n020-k02.xml & 488.0 & 0.0 & 20 \\
+	P-n060-k10.xml & 2161.0 & 0.0 & 60 \\
+	P-n022-k02.xml & 571.0 & 0.0 & 22 \\
+	P-n050-k07.xml & 1612.0 & 0.0 & 50 \\
+	P-n055-k08.xml & 1759.0 & 0.0 & 55 \\
+	P-n070-k10.xml & 2623.0 & 0.0 & 70 \\
+	P-n040-k05.xml & 1301.0 & 0.0 & 40 \\
+	P-n016-k08.xml & 584.0 & 0.0 & 16 \\
+	P-n076-k04.xml & 2745.0 & 0.0 & 76 \\
+	P-n060-k15.xml & 2035.0 & 0.0 & 60 \\
+	P-n076-k05.xml & 2790.0 & 0.01 & 76 \\
+	P-n021-k02.xml & 560.0 & 0.0 & 21 \\
+	P-n022-k08.xml & 763.0 & 0.0 & 22 \\
+	P-n065-k10.xml & 2250.0 & 0.0 & 65 \\
+	P-n055-k07.xml & 1798.0 & 0.0 & 55 \\
+	P-n050-k08.xml & 1508.0 & 0.0 & 50 \\
+	P-n055-k15.xml & 1987.0 & 0.0 & 55 \\
+	P-n055-k10.xml & 1736.0 & 0.0 & 55 \\
+	CMT06.xml & 1715.0 & 0.0 & 51 \\
+	CMT05.xml & 6874.0 & 0.03 & 200 \\
+	CMT04.xml & 5430.0 & 0.02 & 151 \\
+	CMT07.xml & 2732.0 & 0.01 & 76 \\
+	CMT03.xml & 3534.0 & 0.01 & 101 \\
+	CMT01.xml & 1715.0 & 0.0 & 51 \\
+	CMT14.xml & 3232.0 & 0.01 & 101 \\
+	CMT12.xml & 3232.0 & 0.02 & 101 \\
+	CMT02.xml & 2732.0 & 0.01 & 76 \\
+	CMT08.xml & 3534.0 & 0.01 & 101 \\
+	CMT11.xml & 5461.0 & 0.01 & 121 \\
+	CMT10.xml & 6874.0 & 0.03 & 200 \\
+	CMT13.xml & 5461.0 & 0.01 & 121 \\
+	CMT09.xml & 5430.0 & 0.02 & 151
+	\end{tabular}
+	\end{table}
+\newpage
+
+
+\section{Furthest Neightbour Cluster - Code}
+
+\includegraphics[width=1.0\textwidth]{FNC_code.png}
+
+
+\section{\\Two Opt - Local Search Algorithm}
 
 \begin{algorithm}[!ht]
-	\caption{move\_if\_improvement}
+	\caption{Two\_Opt}
 	\begin{algorithmic}[1]
 		\Require{$dist(A,B)$ returns distance from point A to B}
-	\Function{move\_if\_improvement}{{$route\_i, route\_j, i\_to\_j, j\_to\_i$}}
+	\Function{twoopt}{{$route\_i, route\_j, i\_to\_j, j\_to\_i$}}
 
-	\State $\var{A}, \var{B}, \var{C} \gets \var{route\_i[i\_to\_j -1]}, \var{route\_i[i\_to\_j]},$
-	\Statex $\var{route\_i[i\_to\_j+1 \% len(route\_i)]}$
+	\ForAll{$i$, $j$ such that $i$, $j$ are routes index combination}
+	\Statex $\text{evaluate d1 = total length of the two edges before being swapped}$
+	\Statex $\text{evaluate d2 = total length of the two edges after being swapped}$
 
-	\State $\var{D}, \var{E}, \var{F} \gets \var{route\_j[j\_to\_i -1]}, \var{route\_j[j\_to\_i]},$ 
-	\Statex $\var{route\_j[j\_to\_i+1 \% len(route\_j)]}$
-
-
-	\State $\var{old\_distance\_i} \gets dist(\var{A},\var{B}) + dist(\var{B},\var{C})$
-	\State $\var{old\_distance\_j} \gets dist(\var{D},\var{E}) + dist(\var{E},\var{F})$
-
-	\State $\var{new\_dist\_before\_B} \gets dist(\var{A},\var{E}) + dist(\var{E},\var{B}) + dist(\var{B},\var{C})$ 
-
-	\State $\var{new\_dist\_after\_B} \gets dist(\var{A},\var{B}) + dist(\var{B},\var{E}) + dist(\var{E},\var{C})$ 
-
-	\State $\var{new\_distance\_j} \gets dist(\var{D},\var{F})$
-
-	\If{$\var{new\_dist\_before\_B} < {new\_dist\_after\_B}$}
-
-		\If{$\var{old\_distance\_i} + \var{old\_distance\_j} >$ 
-			\Statex $\var{new\_dist\_before\_B} + \var{new\_distance\_j}$}
-			\Statex $\text{move point E from route j to route i before B}$
-		\EndIf
+	\If{$\var{d1} > {d2}$}
+		\Statex $\text{Make the swap between two the routes}$
 	\Else
-
-		\If{$\var{old\_distance\_i} + \var{old\_distance\_j} >$ 
-			\Statex $\var{new\_dist\_after\_B} + \var{new\_distance\_j}$}
-			\Statex $\text{move point E from route j to route i after B}$
-
-		\EndIf
+		\Statex $\text{return}$
 	\EndIf
+	\EndFor
 	\EndFunction
 
 	\end{algorithmic}
 \end{algorithm}
+\newpage
 
-\section{\\ BOXPLOT FIGURES}
+\section{Nearest Neightbour with Two Opt - Results}
 
-\begin{figure}
-	\centering
-\end{figure}
-
-\begin{figure}[!htb]
-	\centering
-\end{figure}
-
-\begin{figure}[!htb]
-	\centering
-\end{figure}
-\begin{figure}[!htb]
-	\centering
-\end{figure}
-
-\begin{figure}[!htb]
-	\centering
-\end{figure}
-\begin{figure}[!htb]
-	\centering
-\end{figure}
-
-\begin{figure}[!htb]
-	\centering
-\end{figure}
-\begin{figure}[!htb]
-	\centering
-\end{figure}
+\begin{table}[]
+	\begin{tabular}{llll}
+	Instance & Cost & Time & Total Nodes \\
+	P-n016-k08.xml & 497 & 0 & 16 \\
+	P-n019-k02.xml & 247 & 0 & 19 \\
+	P-n020-k02.xml & 285 & 0 & 20 \\
+	P-n021-k02.xml & 219 & 0 & 21 \\
+	P-n022-k02.xml & 238 & 0 & 22 \\
+	P-n022-k08.xml & 690 & 0 & 22 \\
+	P-n023-k08.xml & 669 & 0 & 23 \\
+	A-n32-k05.xml & 911 & 0 & 32 \\
+	A-n33-k05.xml & 749 & 0 & 33 \\
+	A-n33-k06.xml & 890 & 0 & 33 \\
+	A-n34-k05.xml & 943 & 0 & 34 \\
+	A-n36-k05.xml & 919 & 0 & 36 \\
+	A-n37-k05.xml & 931 & 0 & 37 \\
+	A-n37-k06.xml & 1111 & 0 & 37 \\
+	A-n38-k05.xml & 954 & 0 & 38 \\
+	A-n39-k06.xml & 1018 & 0 & 39 \\
+	A-n39-k05.xml & 996 & 0 & 39 \\
+	P-n040-k05.xml & 542 & 0 & 40 \\
+	A-n44-k06.xml & 1201 & 0 & 44 \\
+	A-n45-k07.xml & 1485 & 0 & 45 \\
+	A-n45-k06.xml & 1104 & 0 & 45 \\
+	P-n045-k05.xml & 633 & 0 & 45 \\
+	A-n46-k07.xml & 1107 & 0 & 46 \\
+	A-n48-k07.xml & 1277 & 0 & 48 \\
+	P-n050-k10.xml & 791 & 0 & 50 \\
+	P-n050-k07.xml & 650 & 0 & 50 \\
+	P-n050-k08.xml & 705 & 0.01 & 50 \\
+	P-n051-k10.xml & 942 & 0 & 51 \\
+	CMT06.xml & 722 & 0 & 51 \\
+	CMT01.xml & 722 & 0.01 & 51 \\
+	A-n53-k07.xml & 1227 & 0 & 53 \\
+	A-n54-k07.xml & 1554 & 0 & 54 \\
+	A-n55-k09.xml & 1324 & 0 & 55 \\
+	P-n055-k08.xml & 649 & 0.01 & 55 \\
+	P-n055-k07.xml & 700 & 0.01 & 55 \\
+	P-n055-k15.xml & 1079 & 0.01 & 55 \\
+	P-n055-k10.xml & 761 & 0 & 55 \\
+	A-n60-k09.xml & 1528 & 0.01 & 60 \\
+	P-n060-k10.xml & 846 & 0 & 60 \\
+	P-n060-k15.xml & 1119 & 0.01 & 60 \\
+	A-n61-k09.xml & 1202 & 0.01 & 61 \\
+	A-n62-k08.xml & 1456 & 0.01 & 62 \\
+	A-n63-k10.xml & 1482 & 0 & 63 \\
+	A-n63-k09.xml & 1985 & 0.01 & 63 \\
+	A-n64-k09.xml & 1630 & 0.01 & 64 \\
+	A-n65-k09.xml & 1331 & 0.01 & 65 \\
+	P-n065-k10.xml & 992 & 0.01 & 65 \\
+	A-n69-k09.xml & 1501 & 0.01 & 69 \\
+	P-n070-k10.xml & 962 & 0.01 & 70 \\
+	P-n076-k04.xml & 731 & 0.01 & 76 \\
+	P-n076-k05.xml & 785 & 0.01 & 76 \\
+	CMT07.xml & 1014 & 0.01 & 76 \\
+	CMT02.xml & 1014 & 0.01 & 76 \\
+	A-n80-k10.xml & 1994 & 0.01 & 80 \\
+	P-n101-k04.xml & 914 & 0.02 & 101 \\
+	CMT03.xml & 983 & 0.01 & 101 \\
+	CMT14.xml & 1087 & 0.01 & 101 \\
+	CMT12.xml & 1087 & 0.03 & 101 \\
+	CMT08.xml & 983 & 0.02 & 101 \\
+	CMT11.xml & 1342 & 0.02 & 121 \\
+	CMT13.xml & 1342 & 0.02 & 121 \\
+	CMT04.xml & 1353 & 0.03 & 151 \\
+	CMT09.xml & 1353 & 0.03 & 151 \\
+	CMT05.xml & 1598 & 0.05 & 200 \\
+	CMT10.xml & 1598 & 0.05 & 200 \\
+	Golden\_05.xml & 9127 & 0.09 & 201 \\
+	Golden\_17.xml & 860 & 0.07 & 241 \\
+	Golden\_01.xml & 5811 & 0.07 & 241 \\
+	Golden\_13.xml & 975 & 0.09 & 253 \\
+	Golden\_09.xml & 567 & 0.08 & 256 \\
+	Golden\_06.xml & 9566 & 0.1 & 281 \\
+	Golden\_18.xml & 1321 & 0.12 & 301 \\
+	Golden\_14.xml & 1273 & 0.11 & 321 \\
+	Golden\_02.xml & 9182 & 0.14 & 321 \\
+	Golden\_10.xml & 754 & 0.12 & 324 \\
+	Golden\_19.xml & 1656 & 0.14 & 361 \\
+	Golden\_07.xml & 11273 & 0.15 & 361 \\
+	Golden\_15.xml & 1537 & 0.16 & 397 \\
+	Golden\_11.xml & 968 & 0.19 & 400 \\
+	Golden\_03.xml & 11976 & 0.18 & 401 \\
+	Golden\_20.xml & 2158 & 0.21 & 421 \\
+	Golden\_08.xml & 12799 & 0.23 & 441 \\
+	Golden\_04.xml & 15513 & 0.27 & 481 \\
+	Golden\_16.xml & 1888 & 0.24 & 481 \\
+	Golden\_12.xml & 1158 & 0.24 & 484
+	\end{tabular}
+	\end{table}
 
 \end{appendices}
 \end{document}
