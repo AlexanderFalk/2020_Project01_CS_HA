@@ -9,6 +9,7 @@ from furthestcluster import FurhestCluster
 import solverLS
 from solverNN import NearestNeightbour
 from solverKNN import KNearestNeightbour
+from solverTabu2 import TabuSearch
 from twoopt import TwoOPT
 from threeopt import ThreeOPT
 from timeout import TimeOutException
@@ -20,8 +21,9 @@ from pathlib import Path
 
 def solve(instance, config):
     t0 = time.time()
-    ch = FurhestCluster(instance)
+    # ch = FurhestCluster(instance)
     # ch = NearestNeightbour(instance)
+    ch = TabuSearch(instance, config.time_limit)
     sol = ch.construct(t0)  # returns an object of type Solution
 
     # t0 = time.time()
@@ -31,7 +33,7 @@ def solve(instance, config):
     return sol
 
 def performance_testing(config):
-    heuristics_algorithms = [NearestNeightbour]
+    heuristics_algorithms = [FurhestCluster]
     
     try:
         abs_path = os.path.abspath(os.path.dirname(__file__))
@@ -55,7 +57,6 @@ def performance_testing(config):
                             sol = canonical_solution.construct(t0)
                             assert sol.valid_solution()
                             ls = TwoOPT(sol)
-                            # ls = ThreeOPT(sol)
                             sol = ls.construct(t0)  # returns an object of type Solution
                             assert sol.valid_solution()
                             time_elapsed = time.time() - t0
@@ -98,7 +99,6 @@ def main(argv):
     print('output_file      = {!r}'.format(config.output_file))
     print('time_limit       = {!r}'.format(config.time_limit))
     if config.performancetest:
-        
         performance_testing(config)
     else:    
         instance = data.Data(config.instance_file)
