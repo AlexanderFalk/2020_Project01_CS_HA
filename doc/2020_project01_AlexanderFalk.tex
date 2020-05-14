@@ -13,16 +13,19 @@
 \usepackage{algorithm}
 \usepackage{amssymb}
 \usepackage{csvsimple}
-\usepackage{hyperref} 
+\usepackage[plainpages=false]{hyperref}
 \usepackage[noend]{algpseudocode}
 \newcommand{\var}{\texttt}
 \usepackage[toc,page]{appendix}
+\usepackage{csvsimple}
+
+
 
 \setmarginsrb{3 cm}{2.5 cm}{3 cm}{2.5 cm}{1 cm}{1.5 cm}{1 cm}{1.5 cm}
 
-\title{Heuristics \& Approximations Algorithms}								% Title
+\title{Heuristics \& Approximations Algorithms - Project 02}								% Title
 \author{Alexander Falk}								% Author
-\date{13 April 2020}											% Date
+\date{14th of May 2020}											% Date
 
 \makeatletter
 \let\thetitle\@title
@@ -40,7 +43,7 @@
 \let\OldStatex\Statex
 \renewcommand{\Statex}[1][3]{%
   \setlength\@tempdima{\algorithmicindent}%
-  \OldStatex\hskip\dimexpr#1\@tempdima\relax}
+  \OldStatex\hskip\dimexpr#1\@tempdima}
 \makeatother
 
 \begin{document}
@@ -50,7 +53,7 @@
 \begin{titlepage}
 	\centering
     \vspace*{0.5 cm}
-    \includegraphics[scale = 0.5]{SDU_logo.png}\\[1.0 cm]	% University Logo
+    \includegraphics[scale = 0.1]{SDU_logo.png}\\[1.0 cm]	% University Logo
     \textsc{\LARGE University of Southern Denmark}\\[2.0 cm]	% University Name
 	\textsc{\Large DM852}\\[0.5 cm]				% Course Code
 	\textsc{\Large \thedate}\\[0.5 cm]				% Date
@@ -76,11 +79,6 @@
 		\end{flushright}
         
 	\end{minipage}\\[2 cm]
-	
-	
-    
-    
-    
     
 	
 \end{titlepage}
@@ -94,575 +92,118 @@
 
 \section{Introduction}
 
-The goal of this project is to show the knowledge acquired by the student in regards to Heuristic- and Local Search Algorithms. The algorithms are developed to suit the Capacitated Vehicle Routing Problem (CVRP). CVRP is a combinatorial optimization problemm, where a set of n customers has to be visited by m vehicles. Each customer can only be visited one vehicle. The sum of demands by the customers assigned to a vehicle must not overseed the capacity of the vehicle. All vehicles start and end their route at the depot (the starting point). The objective is to minimise the travelling cost and try to use as few vehicles as possible.  
-Heuristics and Local Search algorithms are applied to CVRP, where the heuristics are laying the foundation of possible solutions of routes, and the Local Search algorithms try to improve the solutions.  
-Three heuristic algorithms have been developed:  
-\begin{itemize}
-	\item Nearest Neightbour - Pick nearest customer from the depot or current customer without breaking the capacity
-	\item Furthest Neightbour (with nearest clustering) - Pick customer furthest away from the depot, find the closest customers until the capacity is reached, and generate a route by using Nearest Neightbour
-	\item K-Nearest Neightbour - Pick k nearest customers and randomly pick one of the k options. Proceed until no more customers without breaking the capacity
-\end{itemize}  
-Two local search algorithms have been developed:  
+The goal of this project is to show the knowledge acquired by the student in regards to Heuristic\- and Local Search Algorithms. The algorithms are developed to suit the Capacitated Vehicle Routing Problem (CVRP). CVRP is a combinatorial optimization problem, where a set of n customers have to be visited by m vehicles. Each customer can only be visited once and the vehicles have a capacity limit, which cannot be exceeded. All vehicles start and end their route at the depot (the starting point). The objective is to minimize the travelling cost with as few vehicles as possible.  
+Metaheuristics are the next step from heuristics and local search algorithms. Metaheuristics are combinations of the two, where a metaheuristic algorithm starts of by constructing a solution to a problem and then tries to optimize the solution with a local search algrorithm. The difference between a metaheuristic algorithm and just combining a heuristic\- and a local search algorithm, is the extra set of mechanisms which comes with metaheuristics and the on-going execution until a criteria is met (time or a certain number of steps). E.g. of a mechanism could be: restart of the algorithm. If the algorithm is stuck in a local optimum, a restart can be a mechanism to escape and try again. Another mechanism is saving solutions in memory to try and tackle a problem from different solution generated through the execution cycle.  
+The latter mechanism is being used in this project, where Tabu Search have been implemented in two versions. 
+
+At the end of the report, the performance results are shown of the algorithm.
+All the code can be found at \href{https://github.com/AlexanderFalk/2020_Project01_CS_HA}{GitHub}  
+
+\newpage
+
+\section{Tabu Search} 
+
+Tabu Search \cite{brownlee:1} is a metaheuristic algorithm, which tries to accommodate the issue with being stuck in a local optimum. It does so by using a memory mechanism, which is called the Tabu List. This list contains solutions, which have improved solution, and should not be touched (they are tabu) until a criteria is met. A criteria could be the length of the tabu list. When exceeded, the latest is removed, and allowed to be touched again, and the new is added. 
+The in\-memory structure is commonly implemented in two ways:
 
 \begin{itemize}
-	\item Two Opt - Pick a route generated by some heuristic. Pick two edges, swap the edges, and compare the distance from before and after the swap. If better, make the swap. 
-	\item Three Opt - Pick a route generated by some heuristic. Pick three edges, swap the edges, and compare the distance from before and after the swap. If better, make the swap. 
+	\item Short\-Term: stores a list of candidate solutions. The solutions in here are kept until they are removed by some threshold. This is to avoid revisiting candidate solutions \- as much as possible. 
+	\item Long\-Term: this can be used in addition with Short\-Term to try and increase the diversity of the search space
 \end{itemize}
 
-At the end of the report, comparison of the heuristics and results are presented.
-All the code can be found at \href{https://github.com/AlexanderFalk/2020_Project01_CS_HA}{GitHub}
-\newpage
-
-\section{Nearest Neightbour} 
-
-The Nearest Neightbour algorithm is a simple, yet powerful, approach to tackle CVRP. The algorithm goes starts at the depot and picks the nearest customer by iterating through all of the customers. It marks the customer as visited, adds it to a vehicle, and continues until the capacity of the vehicle is reached (or nearly reached). It returns to the depot and start over with the remaining customers with a new vehicle. 
-
+In the implementation of the project, two Short\-Term memory structures have been implemented, and no Long\-Term. The first Short\-Term structure contains the candidate solutions and the second Short\-Term structure contains a list of sets of edges. To generate a solution as starting point for Tabu Search, the heuristic Nearest Neightbour Algorithm \cite{srivastava_srivastava_2018:1} is used. From here, the local search two\-opt algorithm \cite{venhuis_2019:1} is ran on the solution to make swaps in the routes. The two\-opt is the main driver of trying to generate candidate solutions by swapping edges to reduce the cost.
+\newline
+The two implementations of Tabu Search uses Nearest Neightbour to generate a starting point and two\-opt for swapping edges, but the first version only uses two\-opt on one route: the route a vehicle has been assigned. The issue here is it gets stuck in a Local Optimum quickly. 
+To accommodate the problem, a second version of Tabu Search has been implemented. This version uses two\-opt against two routes instead of one. A swap between two routes (two vehicles), the cost has to be reduced for both vehicles and their capacity cannot be exceeded. 
+\newline
 The algorithm is described in pseudocode:
 \newline
-
 \begin{algorithm}[!ht]
-	\caption{Nearest Neightbour}\label{euclid}
+	\caption{Tabu Search \- Version 1}\label{tsv1}
 	\begin{algorithmic}[1]
 	\Require{Set of customers}
 	\Ensure{$Solution$ (solution to the CVRP instance)}
-	\State $\var{j} \gets$ random node j
-	\State $\var{i} = \var{j} \gets$ starting point
-	\State $\var{W} = \{1, 2, ..., n\} \backslash \{j\} \gets$ set of customers minus the randomly picked
-	\Function{NearestNeightbour}{{$instance, W$}}
-		\While {$W \neq \varnothing$}
-			\State \text{$let\  j \in W \  |\  c_{ij} = min\{c_{ij}\  |\  j \in W\}$}
-			\State Shortest node by edge $(i,j)$ is added to vehicle route
-			\State Set $W = W \backslash \{j\}$ $\gets$ Customer i is marked visited
-			\State $i = j$ $\gets$ setting i to next in line
+	\State $\var{localBest} \gets \texttt{solution of NearestNeightbour}$
+	\State $\var{tabuListSolutions} \gets []$
+	\State $\var{threshold} \gets n$
+	\State $\var{thresholdCounter} \gets 0$
+	\State $\var{stoppingCriteria} \gets 0$
 
+	\Function{TabuSearch}{{$instance, timeLimit$}}
+		
+		\State $\var{keepRunning} \gets True$
+		\While {$keepRunning$}
+			
+			\If {time is up}
+				\State return localBest
+			\EndIf
+			\State $\var{tabuListEdges} \gets []$
+			\For{\texttt{route in localBest.routes}}
+				\If {capacity not exceeded and edges not in tabuListEdges}
+					\State $candidate \gets twoOpt(route)$
+				\EndIf
+				\If {candidate not in tabuListSolution}
+					\State $\texttt{append tabuListSolution} \gets candidate$
+					\If {cost of candidate $<$ cost of localBest}
+						\State $localbest = candidate$
+						\State $\texttt{append candidate to tabu list}$
+					\Else
+						\State $\var{thresholdCounter} \gets + 1$
+						\If {$\var{thresholdCounter} > \var{threshold}$}
+							\State $\texttt{force swap or make worse move}$
+							\State $\var{thresholdCounter} \gets 0$
+							\State $\var{stoppingCriteria} \gets + 1$
+							\If {$\var{stoppingCriteria} > \texttt{number to stop at}$}
+								\State $\texttt{return localBest}$
+							\EndIf
+						\EndIf
+					\EndIf
+				\EndIf
+			\EndFor
 		\EndWhile
 	\EndFunction
 
 	\end{algorithmic}
 \end{algorithm}
 
-The Nearest Neightbour has a running time of $\mathcal{O}(n^2)$, which is a quadric function. This means, that for every execution step done by the algorithm, the input size n has to be checked: $ n * n$.  
-In the developed code, a parameter has been added to perform performance testing on the algorithms. Every instance is executed by each of the algorithms, where time, cost, and numbers of nodes are saved. In Figure \ref{fig:nnanalysis} (see appendix A for data), it is shown when the input size grows, the execution time grows quadric:
 
-\begin{figure}[H]
-	\caption{Algorithm analysis of Nearest Neightbour. $X = Time$, $Y = Nodes$}
-	\centering
-	\includegraphics[width=1.0\textwidth]{NN_Graph_Results.png}
-	\label{fig:nnanalysis}
-
-\end{figure}
-
-\newpage
-
-\section{K Nearest Neightbours with a randomized twist} 
-
-The K-Nearest Neightbour algorithm is the same as Nearest Neightbour but with a twist. The Nearest Neightbour algorithm has to downside of ending in a local optimum. This means, the solution is optimal within the set of candidate solutions. It is different from the global optimum, which is the optimal solution for all possible solutions. KNN tries to escape the local optimum by taking an unforseen step instead of always following the closest node. It starts by picking the k nearest neightbours and then by voting, it picks one of the k nearest neightbours. The vote in this case is done by randomly choosing a customer and then continue with the same approach. 
-
-The algorithm is described in pseudocode:
+The algorithm \ref{tsv1} uses two ShortTerm structures: one for edges and one for solutions. When TwoOpt does its swapping, it has a check if the edges it is swapping is a part of the tabu list for edges. This is done to avoid a swap on an edge, which improved the solution, and therefore should not be touched until a criteria is met. The criteria is set on the length of the tabu list for edges. When the length exceed the defined max length, the edge in the list is removed, and the new one is appended. 
+The tabu list for solutions is more broad and keeps a memory structure for the solutions itself. If a solution is found by swapping, and it is already contained in the list of solutions, then it is "discarded". 
+If it is not in the list and not a better solution, then increase the threshold counter. This counter is defined to have a condition on when to create a worsening move, which can be done by forcing the candidate as solution or make a random move. 
+The last criteria is the stopping criteria. In this project, the stopping criteria is when enough worse moves have been made. When this condition is exceeded, then we return the latest localBest. 
 \newline
-
-\begin{algorithm}[!ht]
-	\caption{K-Nearest Neightbour}\label{euclid}
-	\begin{algorithmic}[1]
-	\Require{Set of customers}
-	\Ensure{$Solution$ (solution to the CVRP instance)}
-	\State $\var{j} \gets$ random node j
-	\State $\var{i} = \var{j} \gets$ starting point
-	\State $\var{W} = \{1, 2, ..., n\} \backslash \{j\} \gets$ set of customers minus the randomly picked
-	\State $\var{C} = \varnothing \gets$ empty set to store closest points to i
-	\Function{KNearestNeightbour}{{$instance, W$}}
-		\While {$W \neq \varnothing$}
-			\State \text{$let\  j \in W \  |\  c_{ij} = min\{c_{ij}\  |\  j \in W\}$}
-			\State Every j is added to $C$
-			\State Sort $C$ ascending and take the first k customers
-			\State Set j to a random pick in $C$
-			\State Set $W = W \backslash \{j\}$ $\gets$ Customer j is marked visited
-			\State $i = j$ $\gets$ setting i to next in line
-
-		\EndWhile
-	\EndFunction
-
-	\end{algorithmic}
-\end{algorithm}
-
-The K-Nearest Neightbour has a running time of $\mathcal{O}(n^2 + k)$, which is a quadric function. The execution steps for the input size is the same as the nearest neightbour, but it adds the extra execution by randomly picking one of the k nearest neigtbours.
-In Figure \ref{fig:knnanalysis} (see appendix B for data), it is shown when the input size grows, the execution time grows quadric:
-
-\begin{figure}[H]
-	\caption{Algorithm analysis of K-Nearest Neightbour. $X = Time$, $Y = Nodes$}
-	\centering
-	\includegraphics[width=1.0\textwidth]{KNN_Graph_Results.png}
-	\label{fig:knnanalysis}
-
-\end{figure}
+The second version of the Tabu Search algorithm is the exact same, but does swapping on two routes instead of the one route assigned to a vehicle. 
 
 \newpage
 
-\section{Furthest Neightbour Cluster - Custom} 
-
-NN and KNN takes the nearest neightbours into consideration and keeps growing by using the nearest neightbour. This can lead to issues with the later vehicles only having the customers left, which are far away from each other. Depending on the instance, KNN - and especially - NN can grow in one direction, and not taking the rest of the instance into account.  
-The project has tried to accommodate the issue by picking the customer furthest away from the depot. The algorithm has been named Furthest Neightbour Cluster - lacking of better naming. The algorithm picks the customer furtest away from the depot, finds the closest nodes to the picked customer (like a cluster), and uses NN to find a suitable route within this cluster. Capacity is taking into considartion when picking the closest customers.
-
-The algorithm is described in pseudocode:
-
-\begin{algorithm}[!ht]
-	\caption{Furthest Neightbour Cluster}\label{euclid}
-	\begin{algorithmic}[1]
-	\Require{Set of customers}
-	\Ensure{$Solution$ (solution to the CVRP instance)}
-	\State $\var{j} \gets$ depot
-	\State $\var{i} = \var{j} \gets$ starting point
-	\State $\var{W} = \{1, 2, ..., n\} \backslash \{j\} \gets$ set of customers minus the randomly picked
-	\State $\var{F} = \varnothing \gets$ empty set to store closest customer to furhtest customer
-	\Function{FurthestNeightbourCluster}{{$instance, W$}}
-		\While {$W \neq \varnothing$}
-			\State \text{$let\  j \in W \  |\  c_{ij} = max\{c_{ij}\  |\  j \in W\}$}
-			\State Furthest node by edge $(i,j)$ is stored in j
-			\State Set $W = W \backslash \{j\}$ $\gets$ Customer j is marked visited
-			\While {$W \neq \varnothing$ \& Capacity not reached}
-				\State \text{$let\  k \in W \  |\  c_{jk} = min\{c_{jk}\  |\  k \in W\}$}
-				\State Shortest node by edge $(j,k)$ is stored in k
-				\State Set $W = W \backslash \{k\}$ $\gets$ Customer k is marked visited
-				\State $i = depot$ as starting point
-			\EndWhile
-		\EndWhile
-	\EndFunction
-
-	\end{algorithmic}
-\end{algorithm}
-
-The Furthest Neightbour Cluster has a running time of $\mathcal{O}(3n^2)$, which is a quadric function. We can calculate it by looking into the code and analyze. The first While-loop takes up $\mathcal{O}(n)$ and the For-loop inside it takes up $\mathcal{O}(n)$. Then the While-loop inside the outer While-loop takes up the same as before: $\mathcal{O}(n)$ and the same with the For-loop inside: $\mathcal{O}(n)$. The last While- and For-loop takes up the same: $\mathcal{O}(n)$. This gives us the following: ($\mathcal{O}(n)$ * $\mathcal{O}(n)$) + ($\mathcal{O}(n)$) * $\mathcal{O}(n)$) + ($\mathcal{O}(n)$ * $\mathcal{O}(n)$) $=$ $\mathcal{O}(3n^2)$. \\
-In Appendix D, the code for the algorithm is shown.\\
-In Figure \ref{fig:fncanalysis} (see appendix E for data), it is shown when the input size grows, the execution time grows quadric:
-
+\section{Analysis}
+The image \ref{Performance by Tabu Search} shows the analysis of the Tabu Search algorithm. The difference from the algorithm from the pseudocode is the actual implementation has been done in such way, when the stopping criteria is met, the first version of Tabu Searh starts an executation of the second version of Tabu Search. This is to get a bit more diversity in the search space. Tabu Search version 1 (one route is being examined) has the problem with being stuck in a local optimum for the route assigned to a vehicle. To try and get around it, we use the second version to compare the local optimum of a route with another to see if we can make an improvement. 
+\newline
+The idea seems good at first sight, but as the the analysis show, we are getting exponetial growth. The running time is: $O(log n) + O(n^2)$, which is Nearest Neightbour + TwoOpt. When the number of nodes are below 100, it performs acceptable, but after 100 nodes the increase in time flies off. An assumption to why this happens in the amount of compares it has to do with comparing all routes with each other to find a better solution. 
 \begin{figure}[H]
-	\caption{Algorithm analysis of K-Nearest Neightbour. $X = Time$, $Y = Nodes$}
+	\caption{Algorithm analysis of Tabu Search. $X = Time$, $Y = Nodes$}
 	\centering
-	\includegraphics[width=1.0\textwidth]{FNC_Graph_Results.png}
-	\label{fig:fncanalysis}
-
+	\label{Performance by Tabu Search}
+	\includegraphics[scale = 0.7]{TabuSearchStatistics.png}
 \end{figure}
 
-\section{Two Opt \& Three Opt}
+An idea of avoiding using a second Tabu Search to minimize the cost of the routes could be to use Nearest Neightbour with randomization to get a bit more diversity in the solutions. 
 
-Heuristics generates solutions which can be global optimal, but tends to end up in a local optimum. One way of getting out of this is by using Local Search Optimization algorithms. These algorithms takes an existing solution to an optimization problem and try to optimize the solution. In this project, the goal is to minimize the total cost of the vehicle routes, and we can use Two Opt and Three Opt to try improving our existing solutions. \\
-Two opt takes two routes and compare their distances. A swap is possible if the distance is being reduced in at least one route, while still preserving the maximum capacity limit of both routes. \\
-Three Opt does the same as Two Opt, but instead of looking and two routes, it takes three into consideration. \\
+\section{Ending Note}
+When looking into information about Tabu Search, TSP is mentioned. Since CVRP is a subset of TSP, an intuition is, it should work nicely on CVRP as well. But it does have it challenges with CVRP. This might be due to the selection of the heuristic and local search algorithms of this project, but nevertheless it struggles. If we look at the TSP, the swapping and short term memory storage is smart with one big route to avoid messing up with a possible good solution, but when having multiple routes with capacity constraints, the short term memory does not offer a lot of improvements, and often does the single route in a local optimum, which is hard to escape. 
+An issue with the heuristic chosen in this project was: routes with 1 node. Those routes made it difficult with swapping. To try and accommodate, a route with one node was added to the route in the solution with the most capacity left (only if total capacity was not exceeded the maximum allowed). It created a risk of a route having its cost (length of the route) exploding, but this was worth it, since a whole vehicle could be left out (gasoline prices).
+The threshold and length of the tabu list have been played around with, and the results did not come out better. Even though, the algorithm was allowed to run for a long time.  
+My conclusion is: if Tabu Search is to be used in CVRP, a deeper investigation have to be made of the heuristic to be used as starting point and a local search algorithm to improve the solution. The ones picked for this project did not work as well as expected.
 
-Using the Nearest Neightbour heuristics to analysise the cost reduction using local search showed an improvement of $171424 - 167016 = 4408$ (sum of total costs from .csv files / see appendix F for results) over all of the instances. And this is by only running Two Opt once on every solution of each instance.
-
-\section{Closing Notes}
-
-Heuristics give fast and good results. They are not global optimum but if the objective is to find a solution, and not the best, they are good for this. To get closer to global optimum, local search algorithms tries to get us closer. The issue with local search algorithms are: when to stop improving. Shown in the above results, Two Opt was only ran once to improve existing solutions, but it could have been run continiously and set a kill switch, when it is no longer improving. One issue with this is, when it gets stuck in a local optimum. In that case, other approaches should be taken to try and get away from the local optimum. An example of this could be by making bad moves. 
-
+\newpage
+\bibliographystyle{plain}
+\bibliography{./bibliography}
 \newpage
 \begin{appendices}
 
-\section{Nearest Neightbour Results}
+\section{Tabu Search Results}
 
-\begin{table}[]
-	\begin{tabular}{llll}
-	Instance & Cost & Time & Total Nodes \\
-	Golden\_04.xml & 15746.0 & 0.26 & 481 \\
-	Golden\_13.xml & 980.0 & 0.1 & 253 \\
-	Golden\_17.xml & 924.0 & 0.08 & 241 \\
-	Golden\_19.xml & 1756.0 & 0.15 & 361 \\
-	Golden\_05.xml & 9443.0 & 0.07 & 201 \\
-	Golden\_09.xml & 575.0 & 0.08 & 256 \\
-	Golden\_01.xml & 5824.0 & 0.07 & 241 \\
-	Golden\_18.xml & 1413.0 & 0.13 & 301 \\
-	Golden\_15.xml & 1545.0 & 0.17 & 397 \\
-	Golden\_20.xml & 2288.0 & 0.21 & 421 \\
-	Golden\_07.xml & 11380.0 & 0.14 & 361 \\
-	Golden\_14.xml & 1281.0 & 0.12 & 321 \\
-	Golden\_16.xml & 1897.0 & 0.26 & 481 \\
-	Golden\_10.xml & 764.0 & 0.13 & 324 \\
-	Golden\_11.xml & 974.0 & 0.17 & 400 \\
-	Golden\_03.xml & 12054.0 & 0.19 & 401 \\
-	Golden\_08.xml & 12876.0 & 0.23 & 441 \\
-	Golden\_06.xml & 9689.0 & 0.13 & 281 \\
-	Golden\_12.xml & 1165.0 & 0.27 & 484 \\
-	Golden\_02.xml & 9245.0 & 0.22 & 321 \\
-	A-n63-k10.xml & 1505.0 & 0.02 & 63 \\
-	A-n61-k09.xml & 1294.0 & 0.01 & 61 \\
-	A-n37-k05.xml & 965.0 & 0.01 & 37 \\
-	A-n54-k07.xml & 1690.0 & 0.01 & 54 \\
-	A-n69-k09.xml & 1555.0 & 0.02 & 69 \\
-	A-n62-k08.xml & 1486.0 & 0.01 & 62 \\
-	A-n53-k07.xml & 1270.0 & 0.01 & 53 \\
-	A-n38-k05.xml & 966.0 & 0.0 & 38 \\
-	A-n65-k09.xml & 1422.0 & 0.01 & 65 \\
-	A-n60-k09.xml & 1583.0 & 0.01 & 60 \\
-	A-n64-k09.xml & 1715.0 & 0.01 & 64 \\
-	A-n45-k07.xml & 1614.0 & 0.0 & 45 \\
-	A-n63-k09.xml & 2056.0 & 0.01 & 63 \\
-	A-n39-k06.xml & 1054.0 & 0.0 & 39 \\
-	A-n33-k05.xml & 765.0 & 0.0 & 33 \\
-	A-n34-k05.xml & 969.0 & 0.0 & 34 \\
-	A-n33-k06.xml & 903.0 & 0.0 & 33 \\
-	A-n39-k05.xml & 1076.0 & 0.0 & 39 \\
-	A-n46-k07.xml & 1159.0 & 0.0 & 46 \\
-	A-n45-k06.xml & 1158.0 & 0.0 & 45 \\
-	A-n37-k06.xml & 1164.0 & 0.0 & 37 \\
-	A-n55-k09.xml & 1392.0 & 0.0 & 55 \\
-	A-n44-k06.xml & 1251.0 & 0.0 & 44 \\
-	A-n36-k05.xml & 1059.0 & 0.0 & 36 \\
-	A-n48-k07.xml & 1316.0 & 0.01 & 48 \\
-	A-n80-k10.xml & 2054.0 & 0.01 & 80 \\
-	A-n32-k05.xml & 926.0 & 0.0 & 32 \\
-	P-n051-k10.xml & 962.0 & 0.0 & 51 \\
-	P-n101-k04.xml & 962.0 & 0.02 & 101 \\
-	P-n050-k10.xml & 807.0 & 0.0 & 50 \\
-	P-n023-k08.xml & 671.0 & 0.0 & 23 \\
-	P-n019-k02.xml & 272.0 & 0.0 & 19 \\
-	P-n045-k05.xml & 674.0 & 0.0 & 45 \\
-	P-n020-k02.xml & 293.0 & 0.0 & 20 \\
-	P-n060-k10.xml & 878.0 & 0.01 & 60 \\
-	P-n022-k02.xml & 289.0 & 0.0 & 22 \\
-	P-n050-k07.xml & 663.0 & 0.0 & 50 \\
-	P-n055-k08.xml & 668.0 & 0.0 & 55 \\
-	P-n070-k10.xml & 991.0 & 0.02 & 70 \\
-	P-n040-k05.xml & 576.0 & 0.0 & 40 \\
-	P-n016-k08.xml & 497.0 & 0.0 & 16 \\
-	P-n076-k04.xml & 773.0 & 0.01 & 76 \\
-	P-n060-k15.xml & 1127.0 & 0.01 & 60 \\
-	P-n076-k05.xml & 839.0 & 0.02 & 76 \\
-	P-n021-k02.xml & 262.0 & 0.0 & 21 \\
-	P-n022-k08.xml & 690.0 & 0.0 & 22 \\
-	P-n065-k10.xml & 1017.0 & 0.01 & 65 \\
-	P-n055-k07.xml & 744.0 & 0.01 & 55 \\
-	P-n050-k08.xml & 711.0 & 0.0 & 50 \\
-	P-n055-k15.xml & 1095.0 & 0.01 & 55 \\
-	P-n055-k10.xml & 791.0 & 0.01 & 55 \\
-	CMT06.xml & 746.0 & 0.0 & 51 \\
-	CMT05.xml & 1690.0 & 0.05 & 200 \\
-	CMT04.xml & 1446.0 & 0.04 & 151 \\
-	CMT07.xml & 1050.0 & 0.02 & 76 \\
-	CMT03.xml & 1047.0 & 0.02 & 101 \\
-	CMT01.xml & 746.0 & 0.0 & 51 \\
-	CMT14.xml & 1130.0 & 0.02 & 101 \\
-	CMT12.xml & 1130.0 & 0.01 & 101 \\
-	CMT02.xml & 1050.0 & 0.01 & 76 \\
-	CMT08.xml & 1047.0 & 0.01 & 101 \\
-	CMT11.xml & 1384.0 & 0.02 & 121 \\
-	CMT10.xml & 1690.0 & 0.05 & 200 \\
-	CMT13.xml & 1384.0 & 0.04 & 121 \\
-	CMT09.xml & 1446.0 & 0.03 & 151
-	\end{tabular}
-	\end{table}
-\newpage
-
-
-\section{K-Nearest Neightbour Results}
-
-\begin{table}[]
-	\begin{tabular}{llll}
-	Instance & Cost & Time & Total Nodes \\
-	Golden\_04.xml & 27923.0 & 0.42 & 481 \\
-	Golden\_13.xml & 1411.0 & 0.13 & 253 \\
-	Golden\_17.xml & 1207.0 & 0.09 & 241 \\
-	Golden\_19.xml & 2299.0 & 0.18 & 361 \\
-	Golden\_05.xml & 13912.0 & 0.08 & 201 \\
-	Golden\_09.xml & 965.0 & 0.09 & 256 \\
-	Golden\_01.xml & 10802.0 & 0.07 & 241 \\
-	Golden\_18.xml & 1686.0 & 0.14 & 301 \\
-	Golden\_15.xml & 2165.0 & 0.19 & 397 \\
-	Golden\_20.xml & 3025.0 & 0.24 & 421 \\
-	Golden\_07.xml & 19552.0 & 0.16 & 361 \\
-	Golden\_14.xml & 1773.0 & 0.13 & 321 \\
-	Golden\_16.xml & 2633.0 & 0.29 & 481 \\
-	Golden\_10.xml & 1231.0 & 0.13 & 324 \\
-	Golden\_11.xml & 1538.0 & 0.19 & 400 \\
-	Golden\_03.xml & 20616.0 & 0.22 & 401 \\
-	Golden\_08.xml & 23087.0 & 0.24 & 441 \\
-	Golden\_06.xml & 17759.0 & 0.11 & 281 \\
-	Golden\_12.xml & 1920.0 & 0.3 & 484 \\
-	Golden\_02.xml & 15024.0 & 0.14 & 321 \\
-	A-n63-k10.xml & 2060.0 & 0.01 & 63 \\
-	A-n61-k09.xml & 1742.0 & 0.01 & 61 \\
-	A-n37-k05.xml & 1170.0 & 0.0 & 37 \\
-	A-n54-k07.xml & 1860.0 & 0.0 & 54 \\
-	A-n69-k09.xml & 1755.0 & 0.01 & 69 \\
-	A-n62-k08.xml & 2189.0 & 0.01 & 62 \\
-	A-n53-k07.xml & 1616.0 & 0.01 & 53 \\
-	A-n38-k05.xml & 1202.0 & 0.0 & 38 \\
-	A-n65-k09.xml & 1882.0 & 0.01 & 65 \\
-	A-n60-k09.xml & 2285.0 & 0.01 & 60 \\
-	A-n64-k09.xml & 2292.0 & 0.01 & 64 \\
-	A-n45-k07.xml & 1585.0 & 0.0 & 45 \\
-	A-n63-k09.xml & 2487.0 & 0.01 & 63 \\
-	A-n39-k06.xml & 1441.0 & 0.0 & 39 \\
-	A-n33-k05.xml & 1205.0 & 0.0 & 33 \\
-	A-n34-k05.xml & 1397.0 & 0.0 & 34 \\
-	A-n33-k06.xml & 1107.0 & 0.0 & 33 \\
-	A-n39-k05.xml & 1289.0 & 0.0 & 39 \\
-	A-n46-k07.xml & 1453.0 & 0.0 & 46 \\
-	A-n45-k06.xml & 1613.0 & 0.0 & 45 \\
-	A-n37-k06.xml & 1509.0 & 0.0 & 37 \\
-	A-n55-k09.xml & 1812.0 & 0.01 & 55 \\
-	A-n44-k06.xml & 1503.0 & 0.0 & 44 \\
-	A-n36-k05.xml & 1307.0 & 0.0 & 36 \\
-	A-n48-k07.xml & 1717.0 & 0.0 & 48 \\
-	A-n80-k10.xml & 2732.0 & 0.01 & 80 \\
-	A-n32-k05.xml & 1282.0 & 0.0 & 32 \\
-	P-n051-k10.xml & 1146.0 & 0.0 & 51 \\
-	P-n101-k04.xml & 1353.0 & 0.01 & 101 \\
-	P-n050-k10.xml & 1083.0 & 0.0 & 50 \\
-	P-n023-k08.xml & 695.0 & 0.0 & 23 \\
-	P-n019-k02.xml & 356.0 & 0.0 & 19 \\
-	P-n045-k05.xml & 797.0 & 0.0 & 45 \\
-	P-n020-k02.xml & 401.0 & 0.0 & 20 \\
-	P-n060-k10.xml & 1132.0 & 0.01 & 60 \\
-	P-n022-k02.xml & 371.0 & 0.0 & 22 \\
-	P-n050-k07.xml & 956.0 & 0.0 & 50 \\
-	P-n055-k08.xml & 1025.0 & 0.0 & 55 \\
-	P-n070-k10.xml & 1310.0 & 0.01 & 70 \\
-	P-n040-k05.xml & 695.0 & 0.0 & 40 \\
-	P-n016-k08.xml & 537.0 & 0.0 & 16 \\
-	P-n076-k04.xml & 1036.0 & 0.01 & 76 \\
-	P-n060-k15.xml & 1451.0 & 0.01 & 60 \\
-	P-n076-k05.xml & 1142.0 & 0.01 & 76 \\
-	P-n021-k02.xml & 309.0 & 0.0 & 21 \\
-	P-n022-k08.xml & 792.0 & 0.0 & 22 \\
-	P-n065-k10.xml & 1279.0 & 0.01 & 65 \\
-	P-n055-k07.xml & 926.0 & 0.01 & 55 \\
-	P-n050-k08.xml & 1006.0 & 0.0 & 50 \\
-	P-n055-k15.xml & 1308.0 & 0.0 & 55 \\
-	P-n055-k10.xml & 1004.0 & 0.0 & 55 \\
-	CMT06.xml & 836.0 & 0.01 & 51 \\
-	CMT05.xml & 2392.0 & 0.07 & 200 \\
-	CMT04.xml & 1909.0 & 0.04 & 151 \\
-	CMT07.xml & 1192.0 & 0.01 & 76 \\
-	CMT03.xml & 1412.0 & 0.01 & 101 \\
-	CMT01.xml & 913.0 & 0.0 & 51 \\
-	CMT14.xml & 1579.0 & 0.01 & 101 \\
-	CMT12.xml & 1528.0 & 0.01 & 101 \\
-	CMT02.xml & 1383.0 & 0.01 & 76 \\
-	CMT08.xml & 1467.0 & 0.02 & 101 \\
-	CMT11.xml & 1983.0 & 0.02 & 121 \\
-	CMT10.xml & 2372.0 & 0.05 & 200 \\
-	CMT13.xml & 1916.0 & 0.02 & 121 \\
-	CMT09.xml & 1880.0 & 0.03 & 151
-	\end{tabular}
-	\end{table}
-\newpage
-
-\section{Furthest Neightbour Cluster - Results}
-
-\begin{table}[]
-	\begin{tabular}{llll}
-	Instance & Cost & Time & Total Nodes \\
-	Golden\_04.xml & 74042.0 & 0.19 & 481 \\
-	Golden\_13.xml & 3137.0 & 0.05 & 253 \\
-	Golden\_17.xml & 3050.0 & 0.07 & 241 \\
-	Golden\_19.xml & 6218.0 & 0.1 & 361 \\
-	Golden\_05.xml & 36673.0 & 0.03 & 201 \\
-	Golden\_09.xml & 2521.0 & 0.07 & 256 \\
-	Golden\_01.xml & 21912.0 & 0.05 & 241 \\
-	Golden\_18.xml & 4350.0 & 0.07 & 301 \\
-	Golden\_15.xml & 5432.0 & 0.15 & 397 \\
-	Golden\_20.xml & 8151.0 & 0.14 & 421 \\
-	Golden\_07.xml & 49258.0 & 0.1 & 361 \\
-	Golden\_14.xml & 4211.0 & 0.11 & 321 \\
-	Golden\_16.xml & 6905.0 & 0.17 & 481 \\
-	Golden\_10.xml & 3519.0 & 0.11 & 324 \\
-	Golden\_11.xml & 4729.0 & 0.12 & 400 \\
-	Golden\_03.xml & 51120.0 & 0.12 & 401 \\
-	Golden\_08.xml & 54002.0 & 0.16 & 441 \\
-	Golden\_06.xml & 43663.0 & 0.07 & 281 \\
-	Golden\_12.xml & 6295.0 & 0.18 & 484 \\
-	Golden\_02.xml & 34681.0 & 0.1 & 321 \\
-	A-n63-k10.xml & 3343.0 & 0.01 & 63 \\
-	A-n61-k09.xml & 3200.0 & 0.01 & 61 \\
-	A-n37-k05.xml & 1762.0 & 0.0 & 37 \\
-	A-n54-k07.xml & 3374.0 & 0.0 & 54 \\
-	A-n69-k09.xml & 3756.0 & 0.0 & 69 \\
-	A-n62-k08.xml & 4130.0 & 0.0 & 62 \\
-	A-n53-k07.xml & 2817.0 & 0.0 & 53 \\
-	A-n38-k05.xml & 1982.0 & 0.0 & 38 \\
-	A-n65-k09.xml & 3420.0 & 0.0 & 65 \\
-	A-n60-k09.xml & 3699.0 & 0.01 & 60 \\
-	A-n64-k09.xml & 3872.0 & 0.0 & 64 \\
-	A-n45-k07.xml & 2592.0 & 0.0 & 45 \\
-	A-n63-k09.xml & 4233.0 & 0.0 & 63 \\
-	A-n39-k06.xml & 2262.0 & 0.0 & 39 \\
-	A-n33-k05.xml & 1970.0 & 0.0 & 33 \\
-	A-n34-k05.xml & 2076.0 & 0.0 & 34 \\
-	A-n33-k06.xml & 1608.0 & 0.0 & 33 \\
-	A-n39-k05.xml & 1942.0 & 0.0 & 39 \\
-	A-n46-k07.xml & 2592.0 & 0.0 & 46 \\
-	A-n45-k06.xml & 2617.0 & 0.0 & 45 \\
-	A-n37-k06.xml & 2217.0 & 0.0 & 37 \\
-	A-n55-k09.xml & 3250.0 & 0.0 & 55 \\
-	A-n44-k06.xml & 2345.0 & 0.0 & 44 \\
-	A-n36-k05.xml & 1990.0 & 0.0 & 36 \\
-	A-n48-k07.xml & 2639.0 & 0.0 & 48 \\
-	A-n80-k10.xml & 4686.0 & 0.01 & 80 \\
-	A-n32-k05.xml & 2018.0 & 0.0 & 32 \\
-	P-n051-k10.xml & 1814.0 & 0.01 & 51 \\
-	P-n101-k04.xml & 3595.0 & 0.01 & 101 \\
-	P-n050-k10.xml & 1798.0 & 0.0 & 50 \\
-	P-n023-k08.xml & 733.0 & 0.0 & 23 \\
-	P-n019-k02.xml & 452.0 & 0.0 & 19 \\
-	P-n045-k05.xml & 1583.0 & 0.0 & 45 \\
-	P-n020-k02.xml & 488.0 & 0.0 & 20 \\
-	P-n060-k10.xml & 2161.0 & 0.0 & 60 \\
-	P-n022-k02.xml & 571.0 & 0.0 & 22 \\
-	P-n050-k07.xml & 1612.0 & 0.0 & 50 \\
-	P-n055-k08.xml & 1759.0 & 0.0 & 55 \\
-	P-n070-k10.xml & 2623.0 & 0.0 & 70 \\
-	P-n040-k05.xml & 1301.0 & 0.0 & 40 \\
-	P-n016-k08.xml & 584.0 & 0.0 & 16 \\
-	P-n076-k04.xml & 2745.0 & 0.0 & 76 \\
-	P-n060-k15.xml & 2035.0 & 0.0 & 60 \\
-	P-n076-k05.xml & 2790.0 & 0.01 & 76 \\
-	P-n021-k02.xml & 560.0 & 0.0 & 21 \\
-	P-n022-k08.xml & 763.0 & 0.0 & 22 \\
-	P-n065-k10.xml & 2250.0 & 0.0 & 65 \\
-	P-n055-k07.xml & 1798.0 & 0.0 & 55 \\
-	P-n050-k08.xml & 1508.0 & 0.0 & 50 \\
-	P-n055-k15.xml & 1987.0 & 0.0 & 55 \\
-	P-n055-k10.xml & 1736.0 & 0.0 & 55 \\
-	CMT06.xml & 1715.0 & 0.0 & 51 \\
-	CMT05.xml & 6874.0 & 0.03 & 200 \\
-	CMT04.xml & 5430.0 & 0.02 & 151 \\
-	CMT07.xml & 2732.0 & 0.01 & 76 \\
-	CMT03.xml & 3534.0 & 0.01 & 101 \\
-	CMT01.xml & 1715.0 & 0.0 & 51 \\
-	CMT14.xml & 3232.0 & 0.01 & 101 \\
-	CMT12.xml & 3232.0 & 0.02 & 101 \\
-	CMT02.xml & 2732.0 & 0.01 & 76 \\
-	CMT08.xml & 3534.0 & 0.01 & 101 \\
-	CMT11.xml & 5461.0 & 0.01 & 121 \\
-	CMT10.xml & 6874.0 & 0.03 & 200 \\
-	CMT13.xml & 5461.0 & 0.01 & 121 \\
-	CMT09.xml & 5430.0 & 0.02 & 151
-	\end{tabular}
-	\end{table}
-\newpage
-
-
-\section{Furthest Neightbour Cluster - Code}
-
-\includegraphics[width=1.0\textwidth]{FNC_code.png}
-
-
-\section{\\Two Opt - Local Search Algorithm}
-
-\begin{algorithm}[!ht]
-	\caption{Two\_Opt}
-	\begin{algorithmic}[1]
-		\Require{$dist(A,B)$ returns distance from point A to B}
-	\Function{twoopt}{{$route\_i, route\_j, i\_to\_j, j\_to\_i$}}
-
-	\ForAll{$i$, $j$ such that $i$, $j$ are routes index combination}
-	\Statex $\text{evaluate d1 = total length of the two edges before being swapped}$
-	\Statex $\text{evaluate d2 = total length of the two edges after being swapped}$
-
-	\If{$\var{d1} > {d2}$}
-		\Statex $\text{Make the swap between two the routes}$
-	\Else
-		\Statex $\text{return}$
-	\EndIf
-	\EndFor
-	\EndFunction
-
-	\end{algorithmic}
-\end{algorithm}
-\newpage
-
-\section{Nearest Neightbour with Two Opt - Results}
-
-\begin{table}[]
-	\begin{tabular}{llll}
-	Instance & Cost & Time & Total Nodes \\
-	P-n016-k08.xml & 497 & 0 & 16 \\
-	P-n019-k02.xml & 247 & 0 & 19 \\
-	P-n020-k02.xml & 285 & 0 & 20 \\
-	P-n021-k02.xml & 219 & 0 & 21 \\
-	P-n022-k02.xml & 238 & 0 & 22 \\
-	P-n022-k08.xml & 690 & 0 & 22 \\
-	P-n023-k08.xml & 669 & 0 & 23 \\
-	A-n32-k05.xml & 911 & 0 & 32 \\
-	A-n33-k05.xml & 749 & 0 & 33 \\
-	A-n33-k06.xml & 890 & 0 & 33 \\
-	A-n34-k05.xml & 943 & 0 & 34 \\
-	A-n36-k05.xml & 919 & 0 & 36 \\
-	A-n37-k05.xml & 931 & 0 & 37 \\
-	A-n37-k06.xml & 1111 & 0 & 37 \\
-	A-n38-k05.xml & 954 & 0 & 38 \\
-	A-n39-k06.xml & 1018 & 0 & 39 \\
-	A-n39-k05.xml & 996 & 0 & 39 \\
-	P-n040-k05.xml & 542 & 0 & 40 \\
-	A-n44-k06.xml & 1201 & 0 & 44 \\
-	A-n45-k07.xml & 1485 & 0 & 45 \\
-	A-n45-k06.xml & 1104 & 0 & 45 \\
-	P-n045-k05.xml & 633 & 0 & 45 \\
-	A-n46-k07.xml & 1107 & 0 & 46 \\
-	A-n48-k07.xml & 1277 & 0 & 48 \\
-	P-n050-k10.xml & 791 & 0 & 50 \\
-	P-n050-k07.xml & 650 & 0 & 50 \\
-	P-n050-k08.xml & 705 & 0.01 & 50 \\
-	P-n051-k10.xml & 942 & 0 & 51 \\
-	CMT06.xml & 722 & 0 & 51 \\
-	CMT01.xml & 722 & 0.01 & 51 \\
-	A-n53-k07.xml & 1227 & 0 & 53 \\
-	A-n54-k07.xml & 1554 & 0 & 54 \\
-	A-n55-k09.xml & 1324 & 0 & 55 \\
-	P-n055-k08.xml & 649 & 0.01 & 55 \\
-	P-n055-k07.xml & 700 & 0.01 & 55 \\
-	P-n055-k15.xml & 1079 & 0.01 & 55 \\
-	P-n055-k10.xml & 761 & 0 & 55 \\
-	A-n60-k09.xml & 1528 & 0.01 & 60 \\
-	P-n060-k10.xml & 846 & 0 & 60 \\
-	P-n060-k15.xml & 1119 & 0.01 & 60 \\
-	A-n61-k09.xml & 1202 & 0.01 & 61 \\
-	A-n62-k08.xml & 1456 & 0.01 & 62 \\
-	A-n63-k10.xml & 1482 & 0 & 63 \\
-	A-n63-k09.xml & 1985 & 0.01 & 63 \\
-	A-n64-k09.xml & 1630 & 0.01 & 64 \\
-	A-n65-k09.xml & 1331 & 0.01 & 65 \\
-	P-n065-k10.xml & 992 & 0.01 & 65 \\
-	A-n69-k09.xml & 1501 & 0.01 & 69 \\
-	P-n070-k10.xml & 962 & 0.01 & 70 \\
-	P-n076-k04.xml & 731 & 0.01 & 76 \\
-	P-n076-k05.xml & 785 & 0.01 & 76 \\
-	CMT07.xml & 1014 & 0.01 & 76 \\
-	CMT02.xml & 1014 & 0.01 & 76 \\
-	A-n80-k10.xml & 1994 & 0.01 & 80 \\
-	P-n101-k04.xml & 914 & 0.02 & 101 \\
-	CMT03.xml & 983 & 0.01 & 101 \\
-	CMT14.xml & 1087 & 0.01 & 101 \\
-	CMT12.xml & 1087 & 0.03 & 101 \\
-	CMT08.xml & 983 & 0.02 & 101 \\
-	CMT11.xml & 1342 & 0.02 & 121 \\
-	CMT13.xml & 1342 & 0.02 & 121 \\
-	CMT04.xml & 1353 & 0.03 & 151 \\
-	CMT09.xml & 1353 & 0.03 & 151 \\
-	CMT05.xml & 1598 & 0.05 & 200 \\
-	CMT10.xml & 1598 & 0.05 & 200 \\
-	Golden\_05.xml & 9127 & 0.09 & 201 \\
-	Golden\_17.xml & 860 & 0.07 & 241 \\
-	Golden\_01.xml & 5811 & 0.07 & 241 \\
-	Golden\_13.xml & 975 & 0.09 & 253 \\
-	Golden\_09.xml & 567 & 0.08 & 256 \\
-	Golden\_06.xml & 9566 & 0.1 & 281 \\
-	Golden\_18.xml & 1321 & 0.12 & 301 \\
-	Golden\_14.xml & 1273 & 0.11 & 321 \\
-	Golden\_02.xml & 9182 & 0.14 & 321 \\
-	Golden\_10.xml & 754 & 0.12 & 324 \\
-	Golden\_19.xml & 1656 & 0.14 & 361 \\
-	Golden\_07.xml & 11273 & 0.15 & 361 \\
-	Golden\_15.xml & 1537 & 0.16 & 397 \\
-	Golden\_11.xml & 968 & 0.19 & 400 \\
-	Golden\_03.xml & 11976 & 0.18 & 401 \\
-	Golden\_20.xml & 2158 & 0.21 & 421 \\
-	Golden\_08.xml & 12799 & 0.23 & 441 \\
-	Golden\_04.xml & 15513 & 0.27 & 481 \\
-	Golden\_16.xml & 1888 & 0.24 & 481 \\
-	Golden\_12.xml & 1158 & 0.24 & 484
-	\end{tabular}
-	\end{table}
+The Comma Separated Results of Tabu Search can be found in the file "TabuSearch.csv" under the folder Doc. This has been done, since LaTeX have a hard time structuring it well into a PDF with so many results - at least in my experience
 
 \end{appendices}
 \end{document}

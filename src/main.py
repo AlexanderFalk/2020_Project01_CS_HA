@@ -9,7 +9,7 @@ from furthestcluster import FurhestCluster
 import solverLS
 from solverNN import NearestNeightbour
 from solverKNN import KNearestNeightbour
-from solverTabu2 import TabuSearch
+from solverTabu import TabuSearchOneRoute
 from twoopt import TwoOPT
 from threeopt import ThreeOPT
 from timeout import TimeOutException
@@ -23,7 +23,7 @@ def solve(instance, config):
     t0 = time.time()
     # ch = FurhestCluster(instance)
     # ch = NearestNeightbour(instance)
-    ch = TabuSearch(instance, config.time_limit)
+    ch = TabuSearchOneRoute(instance, config.time_limit)
     sol = ch.construct(t0)  # returns an object of type Solution
 
     # t0 = time.time()
@@ -33,7 +33,7 @@ def solve(instance, config):
     return sol
 
 def performance_testing(config):
-    heuristics_algorithms = [FurhestCluster]
+    heuristics_algorithms = [TabuSearchOneRoute]
     
     try:
         abs_path = os.path.abspath(os.path.dirname(__file__))
@@ -45,7 +45,7 @@ def performance_testing(config):
                 os.remove(results_path + algorithm.__name__ + '.csv')
             Path(results_path).mkdir(parents=True, exist_ok=True)
             with open(results_path + algorithm.__name__ + '.csv', 'a') as filehandler:
-                filehandler.write("{}, {}, {}, {}\n".format("Instance", "Cost", "Time", "Total Nodes"))
+                filehandler.write("{}, {}, {}, {}\r\n".format("Instance", "Cost", "Time", "Total Nodes"))
             
                 for path, subdirs, files in os.walk(data_path):
                     for filename in files:
@@ -56,11 +56,11 @@ def performance_testing(config):
                             canonical_solution = AlgorithmConstructor(instance, algorithm)
                             sol = canonical_solution.construct(t0)
                             assert sol.valid_solution()
-                            ls = TwoOPT(sol)
-                            sol = ls.construct(t0)  # returns an object of type Solution
-                            assert sol.valid_solution()
+                            # ls = TwoOPT(sol)
+                            # sol = ls.construct(t0)  # returns an object of type Solution
+                            # assert sol.valid_solution()
                             time_elapsed = time.time() - t0
-                            filehandler.write("{}, {}, {}, {}\n"
+                            filehandler.write("{}, {}, {}, {}\r\n"
                                               .format(filename, sol.cost(), 
                                                       round(time_elapsed, 2), len(instance.nodes)))
                             
@@ -103,9 +103,9 @@ def main(argv):
     else:    
         instance = data.Data(config.instance_file)
         instance.short_info()
-        if config.output_file is not None:
-            instance.plot_points(config.output_file+'.png');
-        instance.show()
+        # if config.output_file is not None:
+            # instance.plot_points(config.output_file+'.png');
+        # instance.show()
     
         sol = solve(instance, config)
     
@@ -113,7 +113,7 @@ def main(argv):
         if config.output_file is not None:
             if os.path.isfile(config.output_file):
                 os.remove(config.output_file+'*')
-            sol.plot_routes(config.output_file+'_sol'+'.png')
+            # sol.plot_routes(config.output_file+'_sol'+'.png')
             sol.write_to_file(config.output_file+'.sol')
         print("{} routes with total cost {:.1f}"
               .format(len(sol.routes), sol.cost()))

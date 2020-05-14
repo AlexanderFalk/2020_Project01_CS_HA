@@ -34,6 +34,7 @@ class Solution:
             return False
         
         # Checking intersection issues
+        # print(self.routes)
         intersections = [self.intersection(route1[1:-1], route2[1:-1]) 
                          for route1 in self.routes 
                          for route2 in self.routes[1:] 
